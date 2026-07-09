@@ -13,11 +13,14 @@ if (!$source)
 
 Write-Host "`n========================`nCompiling $projectName...`n========================`n" -ForegroundColor Green
 
+$startTime = Get-Date
 Start-Process -FilePath "./BuildTools/NESASM3.exe" -ArgumentList "$PWD`\$source" -Wait
+$endTime = Get-Date
+$totalTime = ($endTime - $startTime).TotalMilliseconds
 
 Remove-Item * -Include *.fns
 
-$rom = Get-ChildItem -Name -Include *.nes
+$rom = Get-ChildItem -File "$projectName.nes" | Select-Object Name, @{Name="Size"; Expression={[Math]::Round($_.Length / 1KB, 2)}}
 if (!$rom)
 {
     Write-Host "`n========================`nROM Failed`n========================`n" -ForegroundColor Red
@@ -28,8 +31,23 @@ if (!$rom)
 }
 else
 {
-    Write-Host "`n========================`nROM Compiled`n========================`n" -ForegroundColor Green
-    Move-Item -Path $rom -Destination "./Build/$projectName.nes" -Force
+    Write-Host "`n========================`nROM Compiled`n========================" -ForegroundColor Green
+
+    $buildInfo = Get-Content -Path "./README.md"
+    $versionLine = $buildInfo[1]
+    $versionNumbers = $versionLine -split "\."
+    $buildNumber = [int]$($versionNumbers | Select-Object -Last 1)
+    $buildNumber += 1
+    $versionLine = "$($versionNumbers[0]).$($versionNumbers[1]).$($versionNumbers[2]).$($buildNumber)"
+    $buildInfo[1] = $versionLine
+    $buildInfo | Out-File -FilePath "./README.md"
+
+
+    Write-Host "v.$($versionNumbers[1]).$($versionNumbers[2]).$($buildNumber)" -ForegroundColor Green
+    Write-Host "$($rom.Size) KB" -ForegroundColor Green
+    Write-Host "Compilation time: $totalTime ms`n" -ForegroundColor Green
+
+    Move-Item -Path $($rom.Name) -Destination "./Build/$projectName.nes" -Force
     Copy-Item -Path "./Build/$projectName.nes" -Destination "./Backup/$projectName.nes" -Force
     Copy-Item -Path $source -Destination "./Backup/" -Force
     Get-ChildItem -Name -Include *.asm | Copy-Item -Destination "./Backup/" -Force
@@ -37,5 +55,5 @@ else
     {
         Stop-Process -Name "fceuxdsp" -Force
     }
-    Invoke-Item "./Build/$rom"
+    Invoke-Item "./Build/$($rom.Name)"
 }
