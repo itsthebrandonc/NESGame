@@ -21,10 +21,10 @@ metatiles:  ;8 x 8 = 64 bytes
 
 palette:
   ; color pallet based on NES standards, first color is background color and must match
-  .db $0D,$29,$1A,$21,  $2D,$36,$17,$0F,  $2D,$30,$21,$0F,  $2D,$27,$17,$0F   ;;background palette
+  .db $0D,$13,$24,$21,  $2D,$36,$17,$0F,  $2D,$30,$21,$0F,  $2D,$27,$17,$0F   ;;background palette
   .db $0D,$05,$26,$30,  $0D,$20,$10,$00,  $2D,$1C,$15,$14,  $2D,$02,$38,$3C   ;;sprite palette
 
-sprites:
+;sprites:
   ; Y Postion, Tile Number, Attributes, X Position
 
   .org $FFFA     ;first of the three vectors starts here

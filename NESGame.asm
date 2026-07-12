@@ -31,6 +31,7 @@ pointerHi2 .rs 1  ; low byte first, high byte immediately after
 startLo .rs 1     ; low byte first, high byte immediately after
 startHi .rs 1
 temp .rs 1
+value .rs 1
 
 ;Button variables
 buttons1 .rs 1
@@ -43,11 +44,43 @@ textLength .rs 1
 textCooldown .rs 1
 textIsDrawing .rs 1
 
+;Sprite variables
+spriteNo .rs 1
+spriteAddr .rs 1
+spriteDataPos .rs 1
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   .bank 0
   .org $C000 
   .include "resources/startup.asm"
+
+OnInit:
+  ;CREATING NEW SPRITE
+  JSR GetNewSpriteAddress ;Gets sprite no/addr available
+  LDX #$00
+  LDY #$80
+  STX spriteDataPos
+  STY value
+  JSR UpdateSprite ;Sets Y Pos
+  INX
+  LDY #$40
+  STX spriteDataPos
+  STY value
+  JSR UpdateSprite ;Sets Tile Number
+  INX
+  LDY #$00
+  STX spriteDataPos
+  STY value
+  JSR UpdateSprite ;Sets attributes
+  INX
+  LDY #$80
+  STX spriteDataPos
+  STY value
+  JSR UpdateSprite ;Sets X Pos
+
+  RTS
+
 
 OnInputA:
   ;DRAWING TEXT

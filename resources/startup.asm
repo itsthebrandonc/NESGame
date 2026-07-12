@@ -47,14 +47,14 @@ LoadPalettes:
   CPX #$20              ; copying 32 bytes = 2 palettes
   BNE .LoadPalettesLoop 
 
-LoadSprites:
-  LDX #$00              ; start at 0
-.LoadSpritesLoop:
-  LDA sprites, x        ; load data from address (sprites +  x)
-  STA $0200, x          ; Sprite registers start at $0200
-  INX                   
-  CPX #$20              ; 32 total bytes for the 8 sprites
-  BNE .LoadSpritesLoop  
+;LoadSprites:
+;  LDX #$00              ; start at 0
+;.LoadSpritesLoop:
+;  LDA sprites, x        ; load data from address (sprites +  x)
+;  STA $0200, x          ; Sprite registers start at $0200
+;  INX                   
+;  CPX #$20              ; 32 total bytes for the 8 sprites
+;  BNE .LoadSpritesLoop  
                 
 ;LoadBackground:
 ;    LDA $2002             ; read PPU status to reset the high/low latch
@@ -393,7 +393,7 @@ DrawText:
   CPY #$20
   BCC .TextLoop      ; run loop 32 times (for 32 tiles)
 
-  ; Have to set the PPU latch back when done
+  ; Have to set the PPU latch back when done (redundant, find where this can be done last)
   LDA $2002             ; read PPU status to reset the high/low latch
   LDA #$20
   STA $2006             ; write the high byte of $2000 address
@@ -402,10 +402,94 @@ DrawText:
 
   RTS
 
+;; LoadSpriteAddress
+;; ;; Gets sprite address (low byte) from sprite number
+;; ;; Parameters:
+;; ;; ;; spriteNo   - Sprite number
+;; ;; Returns:
+;; ;; ;; spriteAddr - Starting sprite address (low byte) Ex: Sprite 0 = $0200 = $00, Sprite 1 = $04, etc.
+LoadSpriteAddress:
+  ; 64 max sprites, 4 bytes of information each. Sprite 0 = $0200-$0203, Sprite 1 = $0204-0207, etc. $0200 - $02FF
+  LDX #$00
+  LDY spriteNo
+  CPY #$00
+  BNE .LoadSpriteAddress_GetToSprite
+  STX spriteAddr
+  RTS
+.LoadSpriteAddress_GetToSprite ;Gets to correct starting address for sprite (increments by 4)
+  INX
+  INX
+  INX
+  INX
+  DEY
+  CPY #$00
+  BNE .LoadSpriteAddress_GetToSprite
+  STX spriteAddr
+  RTS
+
+;; GetNewSpriteAddress
+;; ;; Finds first sprite address avaialble. Avaialble sprite is determined by if the tile number is zero
+;; ;; Returns:
+;; ;; ;; spriteNo   - Sprite number that is a first available
+;; ;; ;; spriteAddr - Starting sprite address (low byte) Ex: Sprite 0 = $0200 = $00, Sprite 1 = $04, etc.
+GetNewSpriteAddress:
+  ; 64 max sprites, 4 bytes of information each. Sprite 0 = $0200-$0203, Sprite 1 = $0204-0207, etc. $0200 - $02FF
+  LDX #$00
+  LDY #$00
+.GetNewSpriteAddress_Loop:
+  LDA $0202, X ; Checks the attibutes of each sprite
+  CMP #$FE
+  BEQ .GetNewSpriteAddress_Complete ; If attributes is #$FE, sprite has not been written to and can be overwritten. Attributes used because unused bits would make this never occur
+  INX
+  INX
+  INX
+  INX
+  INY
+  JMP .GetNewSpriteAddress_Loop
+  ; No available sprites. What do we do here? Currently, it will overwrite Sprite 63 (the last sprite)
+.GetNewSpriteAddress_Complete:
+  STX spriteAddr
+  STY spriteNo
+  RTS
+
+
+;; UpdateSprite
+;; ;; Updates sprite information
+;; ;; Parameters:
+;; ;; ;; spriteNo   - Sprite number
+;; ;; ;; spriteAddr  - Sprite's starting address (or $00 to load it using spriteNo)
+;; ;; ;; spriteDataPos - 0 = Y Pos, 1 = Tile Number, 2 = Attributes, 3 = X Pos
+;; ;; ;; value      - New value
+UpdateSprite:
+  ; 64 max sprites, 4 bytes of information each. Sprite 0 = $0200-$0203, Sprite 1 = $0204-0207, etc. $0200 - $02FF
+  ; Attributes:
+  ;; Bit 7 - flip sprite vertically
+  ;; Bit 6 - slip sprite horizontally
+  ;; Bit 5 - Priority (0 = in front of background, 1 = behind background)
+  ;; Bit 4, 3 and 2 - None
+  ;; Bit 1 and 0 = Color pallete ($00 - $04)
+  LDX spriteAddr
+  BNE .UpdateSprite_GetToSpriteData ; Sprite address already loaded
+  JSR LoadSpriteAddress
+  LDX spriteAddr
+.UpdateSprite_GetToSpriteData ;Gets to the correct sprite data byte (0-3)
+  LDY spriteDataPos
+  CPY #$00
+  BEQ .UpdateSprite_StartSpriteWrite
+.UpdateSprite_SpriteDataLoop
+  INX
+  DEY
+  CPY #$00
+  BNE .UpdateSprite_SpriteDataLoop
+.UpdateSprite_StartSpriteWrite
+  LDA value
+  STA $0200, X
+  RTS
+
 ;; Override Funcions
 
-OnInit:
-  RTS
+;OnInit:
+;  RTS
 OnTick:
   RTS
 ;OnInputA:
@@ -424,3 +508,4 @@ OnInputL:
   RTS
 OnInputR:
   RTS
+

@@ -28,6 +28,7 @@ if (!$rom)
     $bat = Get-ChildItem  -Path "./BuildTools" -Name -Include *.bat
     Start-Process -FilePath "./BuildTools/$bat" -ArgumentList "$projectName.asm" -Wait
     Remove-Item -Path "./NESASM3.exe"
+    Remove-Item -Path "./$projectName.fns"
 }
 else
 {
@@ -38,18 +39,19 @@ else
     $versionNumbers = $versionLine -split "\."
     $buildNumber = [int]$($versionNumbers | Select-Object -Last 1)
     $buildNumber += 1
-    $versionLine = "$($versionNumbers[0]).$($versionNumbers[1]).$($versionNumbers[2]).$($buildNumber)"
+    $versionLine = "$($versionNumbers[0]).$($versionNumbers[1]).$($versionNumbers[2]).$($versionNumbers[3]).$($buildNumber)"
     $buildInfo[1] = $versionLine
     $buildInfo | Out-File -FilePath "./README.md"
 
 
-    Write-Host "v.$($versionNumbers[1]).$($versionNumbers[2]).$($buildNumber)" -ForegroundColor Green
+    Write-Host "v.$($versionNumbers[1]).$($versionNumbers[2]).$($versionNumbers[3]).$($buildNumber)" -ForegroundColor Green
     Write-Host "$($rom.Size) KB" -ForegroundColor Green
     Write-Host "Compilation time: $totalTime ms`n" -ForegroundColor Green
 
     Move-Item -Path $($rom.Name) -Destination "./Build/$projectName.nes" -Force
     Copy-Item -Path "./Build/$projectName.nes" -Destination "./Backup/$projectName.nes" -Force
     Copy-Item -Path $source -Destination "./Backup/" -Force
+    Remove-Item -Path "./$projectName.fns" -ErrorAction SilentlyContinue
     Get-ChildItem -Name -Include *.asm | Copy-Item -Destination "./Backup/" -Force
     if (Get-Process -Name "fceuxdsp" -ErrorAction SilentlyContinue)
     {
