@@ -98,3 +98,17 @@ OnInputA:
   JSR DrawText
 
   RTS
+
+OnInputL:
+  ;Move character left
+  LDA #$00
+  STA spriteNo
+  LDA #$03
+  STA spriteDataPos
+  JSR GetSpriteData
+  LDA value
+  BEQ .OnInputLComplete
+  DEC value
+  JSR UpdateSprite
+.OnInputLComplete:
+  RTS

@@ -452,7 +452,6 @@ GetNewSpriteAddress:
   STY spriteNo
   RTS
 
-
 ;; UpdateSprite
 ;; ;; Updates sprite information
 ;; ;; Parameters:
@@ -486,6 +485,40 @@ UpdateSprite:
   STA $0200, X
   RTS
 
+;; GetSpriteData
+;; ;; Gets sprite information
+;; ;; Parameters:
+;; ;; ;; spriteNo   - Sprite number
+;; ;; ;; spriteDataPos - 0 = Y Pos, 1 = Tile Number, 2 = Attributes, 3 = X Pos
+;; ;; Returns:
+;; ;; ;; spriteAddr  - Sprite's starting address
+;; ;; ;; value      - New value
+GetSpriteData:
+  ; 64 max sprites, 4 bytes of information each. Sprite 0 = $0200-$0203, Sprite 1 = $0204-0207, etc. $0200 - $02FF
+  ; Attributes:
+  ;; Bit 7 - flip sprite vertically
+  ;; Bit 6 - slip sprite horizontally
+  ;; Bit 5 - Priority (0 = in front of background, 1 = behind background)
+  ;; Bit 4, 3 and 2 - None
+  ;; Bit 1 and 0 = Color pallete ($00 - $04)
+  LDX #$00
+  STX spriteAddr
+  JSR LoadSpriteAddress
+  LDX spriteAddr
+.GetSpriteData_GetToSpriteData: ;Gets to the correct sprite data byte (0-3)
+  LDY spriteDataPos
+  CPY #$00
+  BEQ .GetSpriteData_Complete
+.GetSpriteData_SpriteDataLoop:
+  INX
+  DEY
+  CPY #$00
+  BNE .GetSpriteData_SpriteDataLoop
+.GetSpriteData_Complete:
+  LDA $0200, X
+  STA value
+  RTS
+
 ;; Override Funcions
 
 ;OnInit:
@@ -504,8 +537,8 @@ OnInputU:
   RTS
 OnInputD:
   RTS
-OnInputL:
-  RTS
+;OnInputL:
+;  RTS
 OnInputR:
   RTS
 
