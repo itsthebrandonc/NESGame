@@ -173,6 +173,7 @@ ReadController1:
   LDA #$00
   STA $4016
   LDY buttons1        ; Y = previous button inputs
+  STY prevButtons1
   LDX #$08            ; Eight inputs: A, B, Select, Start, Up, Down, Left, Right
 ReadController1Loop:  ; player input is read one at a time from first bit of $4016
   LDA $4016           ; Only right-most bit tells if button is pressed or not
@@ -202,7 +203,7 @@ ReadA:
   JSR OnInputA
 
 ReadB:
-  TXA
+  LDA buttons1
   AND #%01000000  ; B
   BNE .BDown
 .BUp:
@@ -211,7 +212,7 @@ ReadB:
   STA buttons1Held
   JMP ReadSl
 .BDown:
-  TYA
+  LDA prevButtons1
   AND #%01000000  ; B
   BEQ .BPress
   LDA buttons1Held
@@ -220,7 +221,7 @@ ReadB:
 .BPress:
   JSR OnInputB
 ReadSl:
-  TXA
+  LDA buttons1
   AND #%00100000  ; Select
   BNE .SlDown
 .SlUp:
@@ -229,7 +230,7 @@ ReadSl:
   STA buttons1Held
   JMP ReadSt
 .SlDown:
-  TYA
+  LDA prevButtons1
   AND #%00100000  ; Select
   BEQ .SlPress
   LDA buttons1Held
@@ -238,7 +239,7 @@ ReadSl:
 .SlPress:
   JSR OnInputSl
 ReadSt:
-  TXA
+  LDA buttons1
   AND #%00010000  ; Start
   BNE .StDown
 .SlUp:
@@ -247,7 +248,7 @@ ReadSt:
   STA buttons1Held
   JMP ReadU
 .StDown:
-  TYA
+  LDA prevButtons1
   AND #%00010000  ; Start
   BEQ .StPress
   LDA buttons1Held
@@ -256,7 +257,7 @@ ReadSt:
 .StPress:
   JSR OnInputSt
 ReadU:
-  TXA
+  LDA buttons1
   AND #%00001000  ; Up
   BNE .UDown
 .UUp:
@@ -265,7 +266,7 @@ ReadU:
   STA buttons1Held
   JMP ReadD
 .UDown:
-  TYA
+  LDA prevButtons1
   AND #%00001000  ; Up
   BEQ .UPress
   LDA buttons1Held
@@ -274,7 +275,7 @@ ReadU:
 .UPress:
   JSR OnInputU
 ReadD:
-  TXA
+  LDA buttons1
   AND #%00000100  ; Down
   BNE .DDown
 .DUp:
@@ -283,7 +284,7 @@ ReadD:
   STA buttons1Held
   JMP ReadL
 .DDown:
-  TYA
+  LDA prevButtons1
   AND #%00000100  ; Down
   BEQ .DPress
   LDA buttons1Held
@@ -292,7 +293,7 @@ ReadD:
 .DPress:
   JSR OnInputD
 ReadL:
-  TXA
+  LDA buttons1
   AND #%00000010  ; Left
   BNE .LDown
 .LUp:
@@ -301,7 +302,7 @@ ReadL:
   STA buttons1Held
   JMP ReadR
 .LDown:
-  TYA
+  LDA prevButtons1
   AND #%00000010  ; Left
   BEQ .LPress
   LDA buttons1Held
@@ -310,7 +311,7 @@ ReadL:
 .LPress:
   JSR OnInputL
 ReadR:
-  TXA
+  LDA buttons1
   AND #%00000001  ; Right
   BNE .RDown
 .RUp:
@@ -319,7 +320,7 @@ ReadR:
   STA buttons1Held
   JMP ReadDone
 .RDown:
-  TYA
+  LDA prevButtons1
   AND #%00000001  ; Right
   BEQ .RPress
   LDA buttons1Held
@@ -533,12 +534,12 @@ OnInputSl:
   RTS
 OnInputSt:
   RTS
-OnInputU:
-  RTS
-OnInputD:
-  RTS
+;OnInputU:
+;  RTS
+;OnInputD:
+;  RTS
 ;OnInputL:
 ;  RTS
-OnInputR:
-  RTS
+;OnInputR:
+;  RTS
 

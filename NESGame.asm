@@ -36,6 +36,7 @@ value .rs 1
 ;Button variables
 buttons1 .rs 1
 buttons1Held .rs 1
+prevButtons1 .rs 1
 
 ;Text variables
 textTruncStart .rs 1
@@ -81,7 +82,6 @@ OnInit:
 
   RTS
 
-
 OnInputA:
   ;DRAWING TEXT
   ;; Setting text variable
@@ -111,4 +111,48 @@ OnInputL:
   DEC value
   JSR UpdateSprite
 .OnInputLComplete:
+  RTS
+
+OnInputR:
+  ;Move character right
+  LDA #$00
+  STA spriteNo
+  LDA #$03
+  STA spriteDataPos
+  JSR GetSpriteData
+  LDA value
+  CMP #$F7
+  BEQ .OnInputRComplete
+  INC value
+  JSR UpdateSprite
+.OnInputRComplete:
+  RTS
+
+OnInputU:
+  ;Move character up
+  LDA #$00
+  STA spriteNo
+  LDA #$00
+  STA spriteDataPos
+  JSR GetSpriteData
+  LDA value
+  BEQ .OnInputUComplete
+  DEC value
+  JSR UpdateSprite
+.OnInputUComplete:
+  RTS
+
+OnInputD:
+  ;Move character down
+  LDA #$00
+  STA spriteNo
+  LDA #$00
+  STA spriteDataPos
+  JSR GetSpriteData
+  LDA value
+  CMP #$E7
+  BEQ .OnInputDComplete
+  INC value
+  JSR UpdateSprite
+.OnInputDComplete:
   RTS
