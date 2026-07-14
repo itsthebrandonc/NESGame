@@ -41,6 +41,7 @@ else
     $buildNumber += 1
     $versionLine = "$($versionNumbers[0]).$($versionNumbers[1]).$($versionNumbers[2]).$($versionNumbers[3]).$($buildNumber)"
     $buildInfo[1] = $versionLine
+    $buildInfo[2] = "### $($rom.Size) KB"
     $buildInfo | Out-File -FilePath "./README.md"
 
 
