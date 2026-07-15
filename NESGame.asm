@@ -49,6 +49,10 @@ textIsDrawing .rs 1
 spriteNo .rs 1
 spriteAddr .rs 1
 spriteDataPos .rs 1
+spriteData_Y .rs 1
+spriteData_TileNumber .rs 1
+spriteData_Attr .rs 1
+spriteData_X .rs 1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -58,27 +62,42 @@ spriteDataPos .rs 1
 
 OnInit:
   ;CREATING NEW SPRITE
-  JSR GetNewSpriteAddress ;Gets sprite no/addr available
-  LDX #$00
+  ;JSR GetNewSpriteAddress ;Gets sprite no/addr available
+  ;LDX #$00
+  ;LDY #$80
+  ;STX spriteDataPos
+  ;STY value
+  ;JSR UpdateSprite ;Sets Y Pos
+  ;INX
+  ;LDY #$40
+  ;STX spriteDataPos
+  ;STY value
+  ;JSR UpdateSprite ;Sets Tile Number
+  ;INX
+  ;LDY #$00
+  ;STX spriteDataPos
+  ;STY value
+  ;JSR UpdateSprite ;Sets attributes
+  ;INX
+  ;LDY #$80
+  ;STX spriteDataPos
+  ;STY value
+  ;JSR UpdateSprite ;Sets X Pos
+
+  ;Spawn Character
+  ; Write top-left sprite info and pass it into SpawnCharacter function
   LDY #$80
-  STX spriteDataPos
-  STY value
-  JSR UpdateSprite ;Sets Y Pos
-  INX
+  STA spriteData_Y
+  LDX #$01
   LDY #$40
-  STX spriteDataPos
-  STY value
-  JSR UpdateSprite ;Sets Tile Number
-  INX
+  STA spriteData_Y, X
   LDY #$00
-  STX spriteDataPos
-  STY value
-  JSR UpdateSprite ;Sets attributes
   INX
+  STA spriteData_Y, X
   LDY #$80
-  STX spriteDataPos
-  STY value
-  JSR UpdateSprite ;Sets X Pos
+  INX
+  STA spriteData_Y, X
+  JSR SpawnCharacter
 
   RTS
 
@@ -155,4 +174,65 @@ OnInputD:
   INC value
   JSR UpdateSprite
 .OnInputDComplete:
+  RTS
+
+;; Additional Functions
+
+;; SpawnCharacter
+;; ;; Loads character sprite
+;; ;; Parameters:
+;; ;; ;; spriteData - 4 bytes: Y Pos (top left), Tile Number (top left), Attributes, X Pos (top left)
+SpawnCharacter:
+  ; Sprite 0 (top left) = $0200-$0203, Sprite 1 (top right) = $0204-0207, Sprite 2 (bottom left) = $0208-$020B, Sprite 3 (bottom right) = $020C-$020F
+  ; Attributes:
+  ;; Bit 7 - flip sprite vertically
+  ;; Bit 6 - slip sprite horizontally
+  ;; Bit 5 - Priority (0 = in front of background, 1 = behind background)
+  ;; Bit 4, 3 and 2 - None
+  ;; Bit 1 and 0 = Color pallete ($00 - $04)
+
+  ;Y Pos
+  LDA spriteData_Y
+  STA $0200 ; top left
+  STA $0204 ; top right
+  CLC
+  ADC #$08    ; shift bottom sprites down
+  STA $0208 ; bottom left
+  STA $020C ; bottom right
+
+  ;Tile Number
+  LDY #$01
+  LDA spriteData_Y, Y
+  LDA #$40
+  STA $0201 ; top left
+  TAX
+  INX
+  TXA
+  STA $0205 ; top right
+  CLC
+  ADC #$0F      ; next tiles are on the next row
+  STA $0209
+  TAX
+  INX
+  TXA
+  STA $020D
+
+  ;Attributes
+  INY
+  LDA spriteData_Y, Y
+  STA $0202 ; top left
+  STA $0206 ; top right
+  STA $020A ; bottom left
+  STA $020E ; bottom right
+
+  ;X Pos
+  INY
+  LDA spriteData_Y, Y
+  STA $0203 ; top left
+  STA $020B ; bottom left
+  CLC
+  ADC #$08 ; shift right tiles
+  STA $0207 ; top right
+  STA $020F ; bottom right
+
   RTS
