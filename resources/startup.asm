@@ -491,7 +491,7 @@ GetNewSpriteAddress:
 ;; UpdateSprite
 ;; ;; Updates sprite information
 ;; ;; Parameters:
-;; ;; ;; spriteNo   - Sprite number
+;; ;; ;; spriteNo   - Sprite number (optional if spriteAddr)
 ;; ;; ;; spriteAddr  - Sprite's starting address (or $00 to load it using spriteNo)
 ;; ;; ;; spriteDataPos - 0 = Y Pos, 1 = Tile Number, 2 = Attributes, 3 = X Pos
 ;; ;; ;; value      - New value
@@ -524,7 +524,8 @@ UpdateSprite:
 ;; GetSpriteData
 ;; ;; Gets sprite information
 ;; ;; Parameters:
-;; ;; ;; spriteNo   - Sprite number
+;; ;; ;; spriteNo   - Sprite number (optional if spriteAddr)
+;; ;; ;; spriteAddr  - Sprite's starting address (or $00 to load it using spriteNo)
 ;; ;; ;; spriteDataPos - 0 = Y Pos, 1 = Tile Number, 2 = Attributes, 3 = X Pos
 ;; ;; Returns:
 ;; ;; ;; spriteAddr  - Sprite's starting address
@@ -537,6 +538,8 @@ GetSpriteData:
   ;; Bit 5 - Priority (0 = in front of background, 1 = behind background)
   ;; Bit 4, 3 and 2 - None
   ;; Bit 1 and 0 = Color pallete ($00 - $04)
+  LDX spriteAddr
+  BNE .GetSpriteData_GetToSpriteData ; Sprite address already loaded
   LDX #$00
   STX spriteAddr
   JSR LoadSpriteAddress
@@ -555,12 +558,58 @@ GetSpriteData:
   STA value
   RTS
 
+;; IncSpritePosition
+;; ;; Increment/decrement sprite position X or Y
+;; ;; Parameters:
+;; ;; ;; spriteNo   - Sprite number (optional if spriteAddr)
+;; ;; ;; spriteAddr  - Sprite's starting address (or $00 to load it using spriteNo)
+;; ;; ;; spriteDataPos - 0 = Y Pos, 3 = X Pos
+;; ;; ;; option         - 0 = Increment, 1 = Decrement
+IncSpritePos:
+  ; 64 max sprites, 4 bytes of information each. Sprite 0 = $0200-$0203, Sprite 1 = $0204-0207, etc. $0200 - $02FF
+  ; Attributes:
+  ;; Bit 7 - flip sprite vertically
+  ;; Bit 6 - slip sprite horizontally
+  ;; Bit 5 - Priority (0 = in front of background, 1 = behind background)
+  ;; Bit 4, 3 and 2 - None
+  ;; Bit 1 and 0 = Color pallete ($00 - $04)
+  LDX spriteAddr
+  BNE .IncSpritePos_GetToSpriteData ; Sprite address already loaded
+  JSR LoadSpriteAddress
+  LDX spriteAddr
+.IncSpritePos_GetToSpriteData: ;Gets to the correct sprite data byte (0-3)
+  LDA option
+  BEQ .IncSpritePos_Inc
+  JMP .IncSpritePos_Dec
+.IncSpritePos_Inc:
+  LDA spriteDataPos
+  BEQ .IncSpritePos_IncY
+  JMP .IncSpritePos_IncX
+.IncSpritePos_Dec:
+  LDA spriteDataPos
+  BEQ .IncSpritePos_DecY
+  JMP .IncSpritePos_DecX
+.IncSpritePos_IncX:
+  INC $0203, X
+  JMP .IncSpritePos_Complete
+.IncSpritePos_IncY:
+  INC $0200, X
+  JMP .IncSpritePos_Complete
+.IncSpritePos_DecX:
+  DEC $0203, X
+  JMP .IncSpritePos_Complete
+.IncSpritePos_DecY:
+  DEC $0200, X
+  JMP .IncSpritePos_Complete
+.IncSpritePos_Complete:
+  RTS
+
 ;; Override Funcions
 
 ;OnInit:
 ;  RTS
-OnTick:
-  RTS
+;OnTick:
+;  RTS
 ;OnInputA:
 ;  RTS
 ;OnInputB:

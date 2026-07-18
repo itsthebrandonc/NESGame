@@ -37,6 +37,9 @@ startLo .rs 1     ; low byte first, high byte immediately after
 startHi .rs 1
 temp .rs 1
 value .rs 1
+index .rs 1
+option .rs 1
+direction .rs 1
 
 ;Text variables
 textTruncStart .rs 1
@@ -65,29 +68,6 @@ bulletArray .rs 32
   .include "resources/startup.asm"
 
 OnInit:
-  ;CREATING NEW SPRITE
-  ;JSR GetNewSpriteAddress ;Gets sprite no/addr available
-  ;LDX #$00
-  ;LDY #$80
-  ;STX spriteDataPos
-  ;STY value
-  ;JSR UpdateSprite ;Sets Y Pos
-  ;INX
-  ;LDY #$40
-  ;STX spriteDataPos
-  ;STY value
-  ;JSR UpdateSprite ;Sets Tile Number
-  ;INX
-  ;LDY #$00
-  ;STX spriteDataPos
-  ;STY value
-  ;JSR UpdateSprite ;Sets attributes
-  ;INX
-  ;LDY #$80
-  ;STX spriteDataPos
-  ;STY value
-  ;JSR UpdateSprite ;Sets X Pos
-
   ;Spawn Character
   ; Write top-left sprite info and pass it into SpawnCharacter function
   LDY #$80
@@ -102,6 +82,11 @@ OnInit:
   INX
   STA spriteData, X
   JSR SpawnCharacter
+
+  RTS
+
+OnTick:
+  JSR UpdateBullets
 
   RTS
 
@@ -288,7 +273,9 @@ SpawnBullet:
   LDX #$00
   STX bulletArray
 .SpawnBullet_GetNewIndexEnd: ; X now contains the available spot in the bullet array
+  STX index
   JSR GetNewSpriteAddress
+  LDX index
   LDA spriteAddr
   STA bulletArray, X ; Sprite Address stored in Bullet object's first byte
   INX
@@ -306,4 +293,84 @@ SpawnBullet:
   LDA $0203 ; player X pos
   STA $0203, X
 
+  RTS
+
+;; UpdateBullets
+;; ;; Moves all bullets on screen
+UpdateBullets:
+  LDX #$0
+.UpdateBullets_Loop:
+  STX index
+  LDA bulletArray, X
+  BEQ .UpdateBullets_Inc
+  JSR MoveBullet
+.UpdateBullets_Inc:
+  LDX index
+  INX
+  INX
+  CPX #$20
+  BEQ .UpdateBullets_Complete
+  JMP .UpdateBullets_Loop
+.UpdateBullets_Complete
+  RTS
+
+;; MoveBullet
+;; ;; Moves bullet one tick forward in given direction
+;; ;; Bullet Object: 2 Bytes.
+;; ;; ;; Bullet Sprite Address
+;; ;; ;; Bullet Direction
+;; ;; Parameters:
+;; ;; ;; index - starting array index of bullet.
+MoveBullet:
+  LDX index
+  LDA bulletArray, X ; Sprite Address
+  STA spriteAddr
+  INX
+  LDA bulletArray, X ; Direction
+  STA direction
+  TAY
+  CPY #$07
+  BEQ .MoveBullet_East ; E
+  CPY #$06
+  BEQ .MoveBullet_West ; W
+  CPY #$03
+  BCC .MoveBullet_North ; N, NE, NW
+  JMP .MoveBullet_South ; S, SE, SW
+.MoveBullet_North
+  LDX #$00
+  STX spriteDataPos
+  LDX #$01
+  STX option
+  JSR IncSpritePos ; Decrement Y
+  LDY direction
+  BEQ .MoveBullet_Complete
+  CPY #$01
+  BEQ .MoveBullet_West
+  JMP .MoveBullet_East
+.MoveBullet_South
+  LDX #$00
+  STX spriteDataPos
+  LDX #$00
+  STX option
+  JSR IncSpritePos ; Increment Y
+  LDY direction
+  CPY #$03
+  BEQ .MoveBullet_Complete
+  CPY #$04
+  BEQ .MoveBullet_West
+  JMP .MoveBullet_East
+.MoveBullet_East
+  LDX #$03
+  STX spriteDataPos
+  LDX #$00
+  STX option
+  JSR IncSpritePos ; Increment X
+  JMP .MoveBullet_Complete
+.MoveBullet_West
+  LDX #$03
+  STX spriteDataPos
+  LDX #$01
+  STX option
+  JSR IncSpritePos ; Decrement X
+.MoveBullet_Complete
   RTS
