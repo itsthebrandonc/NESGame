@@ -261,6 +261,7 @@ MoveCharacterDown:
 SpawnBullet:
   ; Find available spot in bullet array
   LDX #$00
+  STA spriteAddr
 .SpawnBullet_GetNewIndexLoop:
   LDA bulletArray, X
   BEQ .SpawnBullet_GetNewIndexEnd
@@ -270,11 +271,18 @@ SpawnBullet:
   BEQ .SpawnBullet_DeleteFirstBullet
   JMP .SpawnBullet_GetNewIndexLoop
 .SpawnBullet_DeleteFirstBullet:
+  LDX bulletArray
+  STX spriteAddr ; Reusing existing Sprite Address instead of finding another one
   LDX #$00
-  STX bulletArray
+  STX index
+  JSR DeleteAndShiftBullets
+  LDX #$1E ; Puts new bullet at end of array
 .SpawnBullet_GetNewIndexEnd: ; X now contains the available spot in the bullet array
   STX index
+  LDA spriteAddr
+  BNE .SpawnBullet_SetBullet ; Sprite Address being reused from a previous bullet (after deleting first bullet)
   JSR GetNewSpriteAddress
+.SpawnBullet_SetBullet
   LDX index
   LDA spriteAddr
   STA bulletArray, X ; Sprite Address stored in Bullet object's first byte
@@ -373,4 +381,45 @@ MoveBullet:
   STX option
   JSR IncSpritePos ; Decrement X
 .MoveBullet_Complete
+  RTS
+
+;; DeleteAndShiftBullets
+;; ;; Deletes bullet in array and shifts everything to the right left (FIFO)
+;; ;; Parameters:
+;; ;; ;; index - starting index of the bullet to be removed
+DeleteAndShiftBullets:
+  ;Delete sprite info
+  LDA #$00
+  LDX index
+  LDY bulletArray, X
+  STA $0200, Y
+  STA $0201, Y
+  STA $0202, Y
+  STA $0203, Y
+
+  ;If index of #$18, no shift needed
+  LDX index
+  CMP #$18
+  BEQ .DeleteAndShiftBullets_Complete
+
+  ;Shift all remaining bullets
+  LDY index
+  TYA
+  TAX
+  INX
+  INX
+.DeleteAndShiftBullets_ShiftLoop
+  LDA bulletArray, X
+  BEQ .DeleteAndShiftBullets_Complete
+  STA bulletArray, Y
+  INX
+  INY
+  LDA bulletArray, X
+  STA bulletArray, Y
+  INX
+  INY
+  CPX #$20
+  BEQ .DeleteAndShiftBullets_Complete
+  JMP .DeleteAndShiftBullets_ShiftLoop
+.DeleteAndShiftBullets_Complete
   RTS
