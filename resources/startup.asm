@@ -212,7 +212,7 @@ ReadDirection:
   INX
   TYA
   AND #%00000010 ; East (E, NE, SE)
-  BNE .ReadDirection_Done
+  BEQ .ReadDirection_Done
   INX
 .ReadDirection_Done
   STX playerDirection

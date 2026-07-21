@@ -338,13 +338,17 @@ MoveBullet:
   STA direction
   TAY
   CPY #$07
-  BEQ .MoveBullet_East ; E
-  CPY #$06
   BEQ .MoveBullet_West ; W
+  CPY #$06
+  BEQ .MoveBullet_East ; E
   CPY #$03
   BCC .MoveBullet_North ; N, NE, NW
   JMP .MoveBullet_South ; S, SE, SW
-.MoveBullet_North
+.MoveBullet_North:
+  LDX spriteAddr
+  LDA $0200, X
+  CMP #$FF
+  BEQ .MoveBullet_Delete ; Off screen, delete
   LDX #$00
   STX spriteDataPos
   LDX #$01
@@ -353,9 +357,13 @@ MoveBullet:
   LDY direction
   BEQ .MoveBullet_Complete
   CPY #$01
-  BEQ .MoveBullet_West
-  JMP .MoveBullet_East
-.MoveBullet_South
+  BEQ .MoveBullet_East
+  JMP .MoveBullet_West
+.MoveBullet_South:
+  LDX spriteAddr
+  LDA $0200, X
+  CMP #$EA
+  BEQ .MoveBullet_Delete ; Off screen, delete
   LDX #$00
   STX spriteDataPos
   LDX #$00
@@ -365,22 +373,39 @@ MoveBullet:
   CPY #$03
   BEQ .MoveBullet_Complete
   CPY #$04
-  BEQ .MoveBullet_West
-  JMP .MoveBullet_East
-.MoveBullet_East
+  BEQ .MoveBullet_East
+  JMP .MoveBullet_West
+.MoveBullet_East:
+  LDX spriteAddr
+  LDA $0203, X
+  CMP #$FA
+  BEQ .MoveBullet_Delete ; Off screen, delete
   LDX #$03
   STX spriteDataPos
   LDX #$00
   STX option
   JSR IncSpritePos ; Increment X
   JMP .MoveBullet_Complete
-.MoveBullet_West
+.MoveBullet_West:
+  LDX spriteAddr
+  LDA $0203, X
+  CMP #$00
+  BEQ .MoveBullet_Delete ; Off screen, delete
   LDX #$03
   STX spriteDataPos
   LDX #$01
   STX option
   JSR IncSpritePos ; Decrement X
-.MoveBullet_Complete
+.MoveBullet_Complete:
+  RTS
+.MoveBullet_Delete:
+  JSR DeleteAndShiftBullets
+  LDX index
+  CMP #$18
+  BEQ .MoveBullet_Complete
+  DEX
+  DEX
+  STX index ; In case objects are shifted, check the previous index again
   RTS
 
 ;; DeleteAndShiftBullets
@@ -394,14 +419,21 @@ DeleteAndShiftBullets:
   LDY bulletArray, X
   STA $0200, Y
   STA $0201, Y
-  STA $0202, Y
   STA $0203, Y
+  LDA #$FE
+  STA $0202, Y ; #$FE is being used as a unique identifier in attributes to indicate sprite is not written to
 
-  ;If index of #$18, no shift needed
+  ;Clear object
+  LDA #$00
+  STA bulletArray, X
+  INX
+  STA bulletArray, X
+
+  ;If index of #$18, no shift needed (end of array)
   LDX index
   CMP #$18
   BEQ .DeleteAndShiftBullets_Complete
-
+.DeleteAndShiftBullets_ShiftRemaining
   ;Shift all remaining bullets
   LDY index
   TYA
@@ -412,10 +444,14 @@ DeleteAndShiftBullets:
   LDA bulletArray, X
   BEQ .DeleteAndShiftBullets_Complete
   STA bulletArray, Y
+  LDA #$00
+  STA bulletArray, X
   INX
   INY
   LDA bulletArray, X
   STA bulletArray, Y
+  LDA #$00
+  STA bulletArray, X
   INX
   INY
   CPX #$20
