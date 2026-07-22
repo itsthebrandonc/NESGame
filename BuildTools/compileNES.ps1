@@ -20,7 +20,7 @@ $totalTime = ($endTime - $startTime).TotalMilliseconds
 
 Remove-Item * -Include *.fns
 
-$rom = Get-ChildItem -File "$projectName.nes" | Select-Object Name, @{Name="Size"; Expression={[Math]::Round($_.Length / 1KB, 2)}}
+$rom = Get-ChildItem -File "$projectName.nes" | Select-Object Name, @{Name="Size"; Expression={[Math]::Round($_.Length / 1KB, 4)}}
 if (!$rom)
 {
     Write-Host "`n========================`nROM Failed`n========================`n" -ForegroundColor Red

@@ -40,6 +40,7 @@ value .rs 1
 index .rs 1
 option .rs 1
 direction .rs 1
+speed .rs 1
 
 ;Text variables
 textTruncStart .rs 1
@@ -391,6 +392,8 @@ UpdateBullets:
 ;; ;; Parameters:
 ;; ;; ;; index - starting array index of bullet.
 MoveBullet:
+  LDX #$02
+  STX speed
   LDX index
   LDA bulletArray, X ; Sprite Address
   STA spriteAddr

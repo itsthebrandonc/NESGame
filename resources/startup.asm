@@ -565,6 +565,7 @@ GetSpriteData:
 ;; ;; ;; spriteAddr  - Sprite's starting address (or $00 to load it using spriteNo)
 ;; ;; ;; spriteDataPos - 0 = Y Pos, 3 = X Pos
 ;; ;; ;; option         - 0 = Increment, 1 = Decrement
+;; ;; ;; speed          - Amount of pixels to move sprite
 IncSpritePos:
   ; 64 max sprites, 4 bytes of information each. Sprite 0 = $0200-$0203, Sprite 1 = $0204-0207, etc. $0200 - $02FF
   ; Attributes:
@@ -578,6 +579,7 @@ IncSpritePos:
   JSR LoadSpriteAddress
   LDX spriteAddr
 .IncSpritePos_GetToSpriteData: ;Gets to the correct sprite data byte (0-3)
+  LDY speed
   LDA option
   BEQ .IncSpritePos_Inc
   JMP .IncSpritePos_Dec
@@ -591,16 +593,28 @@ IncSpritePos:
   JMP .IncSpritePos_DecX
 .IncSpritePos_IncX:
   INC $0203, X
-  JMP .IncSpritePos_Complete
+  CPY #$01
+  BCC .IncSpritePos_Complete
+  DEY
+  JMP .IncSpritePos_IncX
 .IncSpritePos_IncY:
   INC $0200, X
-  JMP .IncSpritePos_Complete
+  CPY #$01
+  BCC .IncSpritePos_Complete
+  DEY
+  JMP .IncSpritePos_IncY
 .IncSpritePos_DecX:
   DEC $0203, X
-  JMP .IncSpritePos_Complete
+  CPY #$01
+  BCC .IncSpritePos_Complete
+  DEY
+  JMP .IncSpritePos_DecX
 .IncSpritePos_DecY:
   DEC $0200, X
-  JMP .IncSpritePos_Complete
+  CPY #$01
+  BCC .IncSpritePos_Complete
+  DEY
+  JMP .IncSpritePos_DecY
 .IncSpritePos_Complete:
   RTS
 
