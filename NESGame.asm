@@ -289,18 +289,79 @@ SpawnBullet:
   INX
   LDA playerDirection
   STA bulletArray, X ; Direction stored in Bullet object's second byte
+  TAY
 
   ; spriteData - 4 bytes: Y Pos (top left), Tile Number (top left), Attributes, X Pos (top left)
+  CPY #$06
+  BCS .SpawnBullet_SetYPlayerPos ; E or W, no need to shift Y
+  CPY #$03
+  BCC .SpawnBullet_SetNorth
+  JMP .SpawnBullet_SetSouth
+.SpawnBullet_SetNorth:
+  LDX $0200 ; player Y pos
+  CPX #$08
+  BCC .SpawnBullet_Return
+  TXA
+  LDX spriteAddr
+  SEC
+  SBC #$08
+  STA $0200, X
+  CPY #$00
+  BEQ .SpawnBullet_SetXPlayerPos
+  CPY #$01
+  BEQ .SpawnBullet_SetEast
+  JMP .SpawnBullet_SetWest
+.SpawnBullet_SetSouth:
+  LDX $0200 ; player Y pos
+  CPX #$F7
+  BCS .SpawnBullet_Return
+  TXA
+  LDX spriteAddr
+  CLC
+  ADC #$10
+  STA $0200, X
+  CPY #$03
+  BEQ .SpawnBullet_SetXPlayerPos
+  CPY #$04
+  BEQ .SpawnBullet_SetEast
+  JMP .SpawnBullet_SetWest
+.SpawnBullet_SetYPlayerPos:
   LDX spriteAddr
   LDA $0200 ; player Y pos
   STA $0200, X
+  CPY #$06
+  BEQ .SpawnBullet_SetEast
+  JMP .SpawnBullet_SetWest
+.SpawnBullet_SetEast:
+  LDX $0203 ; player X pos
+  CPX #$EA
+  BCS .SpawnBullet_Return
+  TXA
+  LDX spriteAddr
+  CLC
+  ADC #$16
+  STA $0203, X
+  JMP .SpawnBullet_PosComplete
+.SpawnBullet_SetWest:
+  LDX $0203 ; player X pos
+  CPX #$08
+  BCC .SpawnBullet_Return
+  TXA
+  LDX spriteAddr
+  SEC
+  SBC #$08
+  STA $0203, X
+  JMP .SpawnBullet_PosComplete
+.SpawnBullet_SetXPlayerPos:
+  LDX spriteAddr
+  LDA $0203 ; player X pos
+  STA $0203, X
+.SpawnBullet_PosComplete
   LDA #$42  ; bullet sprite
   STA $0201, X
   LDA #$00
   STA $0202, X
-  LDA $0203 ; player X pos
-  STA $0203, X
-
+.SpawnBullet_Return
   RTS
 
 ;; UpdateBullets
