@@ -55,6 +55,7 @@ spriteAddr .rs 1
 spriteDataPos .rs 1
 spriteData .rs 4 ; Y Pos, Tile Number, Attributes, X Pos
 playerDirection .rs 1 ; N ($00), NE ($01), NW ($02), S ($03), SE ($04), SW ($05), E ($06), W ($07)
+fireCooldown .rs 1
 
 ;Bullet Array (32 Bytes, 16 Bullets * 2 Bytes)
 ;; ;; Bullet Object: 2 Bytes
@@ -97,8 +98,14 @@ OnInputB:
   BEQ .OnInputB_Press
   RTS
 .OnInputB_Press:
+  LDA fireCooldown
+  BNE .OnInputB_CooldownTimer
   JSR SpawnBullet
-
+  LDA #$01
+  STA fireCooldown
+  RTS
+.OnInputB_CooldownTimer:
+  DEC fireCooldown
   RTS
 
 OnInputA:
@@ -402,22 +409,32 @@ MoveBullet:
   STA direction
   TAY
   CPY #$07
-  BEQ .MoveBullet_West ; W
+  BNE .MoveBullet_Check1 ; W
+  JMP .MoveBullet_West
+.MoveBullet_Check1:
   CPY #$06
-  BEQ .MoveBullet_East ; E
+  BNE .MoveBullet_Check2 ; E
+  JMP .MoveBullet_East
+.MoveBullet_Check2:
   CPY #$03
-  BCC .MoveBullet_North ; N, NE, NW
+  BCS .MoveBullet_Check3
+  JMP .MoveBullet_North ; N, NE, NW
+.MoveBullet_Check3:
   JMP .MoveBullet_South ; S, SE, SW
 .MoveBullet_North:
   LDX spriteAddr
   LDA $0200, X
-  CMP #$FF
-  BEQ .MoveBullet_Delete ; Off screen, delete
+  STA temp
+  SEC
+  SBC speed
+  CMP temp
+  BCC .MoveBullet_North2 ; Less than previous value. Bullet not looped.
+  JMP .MoveBullet_Delete
+.MoveBullet_North2:
   LDX #$00
   STX spriteDataPos
-  LDX #$01
-  STX option
-  JSR IncSpritePos ; Decrement Y
+  STA value
+  JSR UpdateSprite
   LDY direction
   BEQ .MoveBullet_Complete
   CPY #$01
@@ -426,13 +443,17 @@ MoveBullet:
 .MoveBullet_South:
   LDX spriteAddr
   LDA $0200, X
-  CMP #$EA
-  BEQ .MoveBullet_Delete ; Off screen, delete
+  STA temp
+  CLC
+  ADC speed
+  CMP temp
+  BCS .MoveBullet_South2 ; More than previous value. Bullet not looped.
+  JMP .MoveBullet_Delete
+.MoveBullet_South2:
   LDX #$00
   STX spriteDataPos
-  LDX #$00
-  STX option
-  JSR IncSpritePos ; Increment Y
+  STA value
+  JSR UpdateSprite
   LDY direction
   CPY #$03
   BEQ .MoveBullet_Complete
@@ -442,24 +463,32 @@ MoveBullet:
 .MoveBullet_East:
   LDX spriteAddr
   LDA $0203, X
-  CMP #$FA
-  BEQ .MoveBullet_Delete ; Off screen, delete
+  STA temp
+  CLC
+  ADC speed
+  CMP temp
+  BCS .MoveBullet_East2 ; More than previous value. Bullet not looped.
+  JMP .MoveBullet_Delete
+.MoveBullet_East2:
   LDX #$03
   STX spriteDataPos
-  LDX #$00
-  STX option
-  JSR IncSpritePos ; Increment X
+  STA value
+  JSR UpdateSprite
   JMP .MoveBullet_Complete
 .MoveBullet_West:
   LDX spriteAddr
   LDA $0203, X
-  CMP #$00
-  BEQ .MoveBullet_Delete ; Off screen, delete
+  STA temp
+  SEC
+  SBC speed
+  CMP temp
+  BCC .MoveBullet_West2 ; Less than previous value. Bullet not looped.
+  JMP .MoveBullet_Delete
+.MoveBullet_West2:
   LDX #$03
   STX spriteDataPos
-  LDX #$01
-  STX option
-  JSR IncSpritePos ; Decrement X
+  STA value
+  JSR UpdateSprite
 .MoveBullet_Complete:
   RTS
 .MoveBullet_Delete:
