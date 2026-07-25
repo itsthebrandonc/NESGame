@@ -384,21 +384,35 @@ SpawnBullet:
   RTS
 
 ;; UpdateBullets
-;; ;; Moves all bullets on screen
+;; ;; Moves all bullets on screen and then check collision with enemies
 UpdateBullets:
   LDX #$0
-.UpdateBullets_Loop:
+.UpdateBullets_MoveLoop:
   STX index
   LDA bulletArray, X
-  BEQ .UpdateBullets_Inc
+  BEQ .UpdateBullets_MoveInc
   JSR MoveBullet
-.UpdateBullets_Inc:
+.UpdateBullets_MoveInc:
+  LDX index
+  INX
+  INX
+  CPX #$20
+  BEQ .UpdateBullets_MoveComplete
+  JMP .UpdateBullets_MoveLoop
+.UpdateBullets_MoveComplete:
+  LDX #$0
+.UpdateBullets_CollisionLoop:
+  STX index
+  LDA bulletArray, X
+  BEQ .UpdateBullets_CollisionInc
+  JSR CheckBulletCollision
+.UpdateBullets_CollisionInc:
   LDX index
   INX
   INX
   CPX #$20
   BEQ .UpdateBullets_Complete
-  JMP .UpdateBullets_Loop
+  JMP .UpdateBullets_CollisionLoop
 .UpdateBullets_Complete
   RTS
 
@@ -512,6 +526,87 @@ MoveBullet:
   STX index ; In case objects are shifted, check the previous index again
   RTS
 
+;; CheckBulletCollision
+;; ;; Checks for collision between player bullet and enemy sprite
+;; ;; Bullet Object: 2 Bytes.
+;; ;; ;; Bullet Sprite Address
+;; ;; ;; Bullet Direction
+;; ;; Parameters:
+;; ;; ;; index - starting array index of bullet.
+CheckBulletCollision:
+  ; Gets Bullet position
+  LDY index
+  LDX bulletArray, Y
+  STX spriteAddr
+  LDA $0200, X ; Bullet Y Pos
+  STA spriteData
+  INX
+  INX
+  INX
+  LDY #$03
+  LDA $0200, X ; Bullet X Pos
+  STA spriteData, Y
+
+  ;TODO: Create enemy array and get enemy ID
+  LDX #$00 ; Replace with enemy ID
+  TXA
+  ASL A
+  ASL A
+  TAX
+
+  ; Bullet y1 < Enemy y2
+  ; Bullet y2 > Enemy y1
+  ; Bullet x1 < Enemy x2
+  ; Bullet x2 > Enemy x1
+
+.CheckBulletCollision_Y1:
+  ; Bullet Y1 < Enemy Y2
+  LDA $0210, X
+  CLC
+  ADC #$08
+  STA value
+  LDA spriteData
+  CMP value
+  BCC .CheckBulletCollision_Y2
+  JMP .CheckBulletCollision_Complete
+.CheckBulletCollision_Y2:
+  ; Bullet Y2 > Enemy Y1
+  LDA $0210, X
+  STA value
+  LDA spriteData
+  CLC
+  ADC #$08
+  CMP value
+  BCS .CheckBulletCollision_X1
+  JMP .CheckBulletCollision_Complete
+.CheckBulletCollision_X1:
+  ; Bullet X1 < Enemy X2
+  LDA $0213, X
+  CLC
+  ADC #$08
+  STA value
+  LDY #$03
+  LDA spriteData, Y
+  CMP value
+  BCC .CheckBulletCollision_X2
+  JMP .CheckBulletCollision_Complete
+.CheckBulletCollision_X2:
+  ; Bullet X2 > Enemey X1
+  LDA $0213, X
+  STA value
+  LDY #$03
+  LDA spriteData, Y
+  CLC
+  ADC #$08
+  CMP value
+  BCS .CheckBulletCollision_Success
+  JMP .CheckBulletCollision_Complete
+.CheckBulletCollision_Success:
+  JSR DeleteAndShiftBullets
+  JSR DeleteEnemy
+.CheckBulletCollision_Complete:
+  RTS
+
 ;; DeleteAndShiftBullets
 ;; ;; Deletes bullet in array and shifts everything to the right left (FIFO)
 ;; ;; Parameters:
@@ -623,4 +718,37 @@ SpawnEnemy:
   STA $0217, X ; top right
   STA $021F, X ; bottom right
 
+  RTS
+
+;; DeleteEnemy
+;; ;; Clears enemy sprite
+DeleteEnemy:
+  ; Sprites 4-23 reserved for enemies
+  ; Sprite 4 (top left) = $0210-$0213, Sprite 5 (top right) = $0214-0217, Sprite 6 (bottom left) = $0218-$021B, Sprite 7 (bottom right) = $021C-$021F
+
+  ;TODO: Create enemy array and get enemy ID
+  LDX #$00 ; Replace with enemy ID
+  TXA
+  ASL A
+  ASL A
+  TAX
+
+  ;Delete sprite info
+  LDY #$04
+.DeleteEnemy_Loop:
+  LDA #$00
+  STA $0210, X
+  STA $0211, X
+  STA $0213, X
+  LDA #$FE
+  STA $0212, X ; #$FE is being used as a unique identifier in attributes to indicate sprite is not written to
+  INX
+  INX
+  INX
+  INX
+  DEY
+  CPY #$00
+  BEQ .DeleteEnemy_Complete
+  JMP .DeleteEnemy_Loop
+.DeleteEnemy_Complete:
   RTS
