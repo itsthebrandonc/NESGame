@@ -465,15 +465,24 @@ LoadSpriteAddress:
 
 ;; GetNewSpriteAddress
 ;; ;; Finds first sprite address avaialble. Avaialble sprite is determined by if the tile number is zero
+;; ;; Parameters:
+;; ;; ;; pointerLo - Starting ID to search for available sprite
 ;; ;; Returns:
 ;; ;; ;; spriteNo   - Sprite number that is a first available
 ;; ;; ;; spriteAddr - Starting sprite address (low byte) Ex: Sprite 0 = $0200 = $00, Sprite 1 = $04, etc.
 GetNewSpriteAddress:
   ; 64 max sprites, 4 bytes of information each. Sprite 0 = $0200-$0203, Sprite 1 = $0204-0207, etc. $0200 - $02FF
-  LDX #$00
-  LDY #$00
+  ; Sprites 0-3 reserved for player (4 sprites big)
+  ; Sprites 4-23 reserved for enemies (5 max enemies * 4 sprites big)
+  LDY pointerLo
+  TYA
+  ASL A
+  ASL A
+  TAX
+  ;LDX #$60 ; Sprite 24 address (4 * 24)
+  ;LDY #$17 ; Sprite 24
 .GetNewSpriteAddress_Loop:
-  LDA $0202, X ; Checks the attibutes of each sprite
+  LDA $0202, X ; Checks the attributes of each sprite
   CMP #$FE
   BEQ .GetNewSpriteAddress_Complete ; If attributes is #$FE, sprite has not been written to and can be overwritten. Attributes used because unused bits would make this never occur
   INX
