@@ -467,6 +467,7 @@ LoadSpriteAddress:
 ;; ;; Finds first sprite address avaialble. Avaialble sprite is determined by if the tile number is zero
 ;; ;; Parameters:
 ;; ;; ;; pointerLo - Starting ID to search for available sprite
+;; ;; ;; pointerHi - Ending ID to search for available sprite
 ;; ;; Returns:
 ;; ;; ;; spriteNo   - Sprite number that is a first available
 ;; ;; ;; spriteAddr - Starting sprite address (low byte) Ex: Sprite 0 = $0200 = $00, Sprite 1 = $04, etc.
@@ -485,13 +486,16 @@ GetNewSpriteAddress:
   LDA $0202, X ; Checks the attributes of each sprite
   CMP #$FE
   BEQ .GetNewSpriteAddress_Complete ; If attributes is #$FE, sprite has not been written to and can be overwritten. Attributes used because unused bits would make this never occur
+  CPY pointerHi
+  BCS .GetNewSpriteAddress_Full
   INX
   INX
   INX
   INX
   INY
   JMP .GetNewSpriteAddress_Loop
-  ; No available sprites. What do we do here? Currently, it will overwrite Sprite 63 (the last sprite)
+.GetNewSpriteAddress_Full:
+  ; No available sprites. What do we do here? Currently, it will overwrite the last sprite
 .GetNewSpriteAddress_Complete:
   STX spriteAddr
   STY spriteNo

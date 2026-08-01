@@ -112,6 +112,18 @@ OnInit:
   STA spriteData, X
   JSR SpawnEnemy
 
+  ;Spawn Enemy
+  ; Write top-left sprite info and pass it into SpawnEnemy function
+  LDA #$0F
+  STA spriteData
+  LDA #$01
+  LDX #$02
+  STA spriteData, X
+  LDA #$0F
+  INX
+  STA spriteData, X
+  JSR SpawnEnemy
+
   RTS
 
 OnTick:

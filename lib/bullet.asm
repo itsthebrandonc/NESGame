@@ -27,6 +27,8 @@ SpawnBullet:
   BNE .SpawnBullet_SetBullet ; Sprite Address being reused from a previous bullet (after deleting first bullet)
   LDA #$17
   STA pointerLo
+  LDA #$3F
+  STA pointerHi
   JSR GetNewSpriteAddress
 .SpawnBullet_SetBullet
   LDX index
@@ -330,7 +332,7 @@ CheckBulletCollision:
   JMP .CheckBulletCollision_Complete
 .CheckBulletCollision_Success:
   JSR DeleteAndShiftBullets
-  JSR DeleteEnemy
+  JSR DeleteAndShiftEnemies
 .CheckBulletCollision_Complete:
   RTS
 
