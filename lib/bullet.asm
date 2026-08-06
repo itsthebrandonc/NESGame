@@ -276,7 +276,24 @@ CheckBulletCollision:
   LDA $0200, X ; Bullet X Pos
   STA spriteData, Y
 
-  ;TODO: Create enemy array and get enemy ID
+  ;TODO: Replace with enemy ID
+;.CheckBulletCollsion_EnemyLoop:
+;  LDX enemyArray
+;  CPX #$00
+;  BNE .CheckBulletCollsion_ContinueLoop
+;  JSR BulletEnemyCollisonCheck
+;  LDY result
+;  BEQ .CheckBulletCollision_ContinueLoop
+;  JSR DeleteAndShiftBullets
+;  JSR DeleteAndShiftEnemies
+;.CheckBulletCollsion_ContinueLoop:
+;  INX
+;  INX
+;  CPX #$14 ;Outside bullet array
+;  BNE .CheckBulletCollsion_EnemyLoop
+
+
+
   LDX #$00 ; Replace with enemy ID
   TXA
   ASL A

@@ -6,7 +6,7 @@ SpawnEnemy:
   ; Sprites 4-23 reserved for enemies
   ; Sprite 4 (top left) = $0210-$0213, Sprite 5 (top right) = $0214-0217, Sprite 6 (bottom left) = $0218-$021B, Sprite 7 (bottom right) = $021C-$021F
 
-  ; Find available spot in bullet array
+  ; Find available spot in enemy array
   LDX #$00
   STX spriteAddr
 .SpawnEnemy_GetNewIndexLoop:
