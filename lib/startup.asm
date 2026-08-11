@@ -631,6 +631,73 @@ IncSpritePos:
 .IncSpritePos_Complete:
   RTS
 
+;; SpriteCollisionCheck
+;; ;; Given two sprites, checks for collision/overlap
+;; ;; Parameters:
+;; ;; ;; spriteData - Sprite1 Y Pos, unsused, unused, XPos
+;; ;; ;; spriteData2 - Sprite2 Y Pos, unused, unused, YPos
+SpriteCollisionCheck:
+  ;spriteData = Sprite1 Y1
+  ;spriteData + width = Sprite1 Y2
+  ;spriteData,3 = Sprite1 X1
+  ;spriteData,3 + width = Sprite1 X2
+  ;spriteData2 = Sprite2 Y1
+  ;spriteData2 + width = Sprite2 Y2
+  ;spriteData2,3 = Sprite2 X1
+  ;spriteData2,3 + width = Sprite2 X2
+  LDX #$00
+  STX result
+.SpriteCollisionCheck_Y1:
+  ; Sprite1 Y1 < Sprite2 Y2
+  LDA spriteData2
+  CLC
+  ADC #$08
+  STA value
+  LDA spriteData
+  CMP value
+  BCC .SpriteCollisionCheck_Y2
+  RTS
+.SpriteCollisionCheck_Y2:
+  ; Sprite1 Y2 > Sprite2 Y1
+  LDA spriteData2
+  CLC
+  ADC #$08
+  STA value
+  LDA spriteData
+  CLC
+  ADC #$08
+  CMP value
+  BCS .SpriteCollisionCheck_X1
+  RTS
+.SpriteCollisionCheck_X1:
+  ; Sprite1 X1 < Sprite2 X2
+  LDY #$03
+  LDA spriteData2, Y
+  CLC
+  ADC #$08
+  STA value
+  LDY #$03
+  LDA spriteData, Y
+  CMP value
+  BCC .SpriteCollisionCheck_X2
+  RTS
+.SpriteCollisionCheck_X2:
+  ; Sprite1 X2 > Sprite2 X1
+  LDY #$03
+  LDA spriteData2, Y
+  STA value
+  LDY #$03
+  LDA spriteData, Y
+  CLC
+  ADC #$08
+  CMP value
+  BCS .SpriteCollisionCheck_Success
+  RTS
+.SpriteCollisionCheck_Success:
+  LDX #$01
+  STX result
+  RTS
+
 ;; Override Funcions
 
 ;OnInit:

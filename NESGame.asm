@@ -37,7 +37,9 @@ startLo .rs 1     ; low byte first, high byte immediately after
 startHi .rs 1
 temp .rs 1
 value .rs 1
+result .rs 1
 index .rs 1
+index2 .rs 1
 option .rs 1
 direction .rs 1
 speed .rs 1
@@ -54,6 +56,7 @@ spriteNo .rs 1
 spriteAddr .rs 1
 spriteDataPos .rs 1
 spriteData .rs 4 ; Y Pos, Tile Number, Attributes, X Pos
+spriteData2 .rs 4 ; Y Pos, Tile Number, Attributes, X Pos
 playerDirection .rs 1 ; N ($00), NE ($01), NW ($02), S ($03), SE ($04), SW ($05), E ($06), W ($07)
 fireCooldown .rs 1
 

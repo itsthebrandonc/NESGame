@@ -256,7 +256,7 @@ MoveBullet:
   RTS
 
 ;; CheckBulletCollision
-;; ;; Checks for collision between player bullet and enemy sprite
+;; ;; Loops through all enemies for given bullet to check collision
 ;; ;; Bullet Object: 2 Bytes.
 ;; ;; ;; Bullet Sprite Address
 ;; ;; ;; Bullet Direction
@@ -266,7 +266,7 @@ CheckBulletCollision:
   ; Gets Bullet position
   LDY index
   LDX bulletArray, Y
-  STX spriteAddr
+  ;STX spriteAddr
   LDA $0200, X ; Bullet Y Pos
   STA spriteData
   INX
@@ -277,79 +277,33 @@ CheckBulletCollision:
   STA spriteData, Y
 
   ;TODO: Replace with enemy ID
-;.CheckBulletCollsion_EnemyLoop:
-;  LDX enemyArray
-;  CPX #$00
-;  BNE .CheckBulletCollsion_ContinueLoop
-;  JSR BulletEnemyCollisonCheck
-;  LDY result
-;  BEQ .CheckBulletCollision_ContinueLoop
-;  JSR DeleteAndShiftBullets
-;  JSR DeleteAndShiftEnemies
-;.CheckBulletCollsion_ContinueLoop:
-;  INX
-;  INX
-;  CPX #$14 ;Outside bullet array
-;  BNE .CheckBulletCollsion_EnemyLoop
-
-
-
-  LDX #$00 ; Replace with enemy ID
-  TXA
-  ASL A
-  ASL A
-  TAX
-
-  ; Bullet y1 < Enemy y2
-  ; Bullet y2 > Enemy y1
-  ; Bullet x1 < Enemy x2
-  ; Bullet x2 > Enemy x1
-
-.CheckBulletCollision_Y1:
-  ; Bullet Y1 < Enemy Y2
-  LDA $0210, X
-  CLC
-  ADC #$08
-  STA value
-  LDA spriteData
-  CMP value
-  BCC .CheckBulletCollision_Y2
-  JMP .CheckBulletCollision_Complete
-.CheckBulletCollision_Y2:
-  ; Bullet Y2 > Enemy Y1
-  LDA $0210, X
-  STA value
-  LDA spriteData
-  CLC
-  ADC #$08
-  CMP value
-  BCS .CheckBulletCollision_X1
-  JMP .CheckBulletCollision_Complete
-.CheckBulletCollision_X1:
-  ; Bullet X1 < Enemy X2
-  LDA $0213, X
-  CLC
-  ADC #$08
-  STA value
+  LDY #$00
+  STY index2
+.CheckBulletCollision_EnemyLoop:
+  LDY index2
+  LDX enemyArray, Y
+  BEQ .CheckBulletCollision_Complete ; Enemy sprite reference empty
+  LDA $0200, X ; Enemy Y Pos
+  STA spriteData2
+  INX
+  INX
+  INX
   LDY #$03
-  LDA spriteData, Y
-  CMP value
-  BCC .CheckBulletCollision_X2
-  JMP .CheckBulletCollision_Complete
-.CheckBulletCollision_X2:
-  ; Bullet X2 > Enemey X1
-  LDA $0213, X
-  STA value
-  LDY #$03
-  LDA spriteData, Y
-  CLC
-  ADC #$08
-  CMP value
-  BCS .CheckBulletCollision_Success
-  JMP .CheckBulletCollision_Complete
-.CheckBulletCollision_Success:
+  LDA $0200, X ; Enemy X Pos
+  STA spriteData2, Y
+  JSR SpriteCollisionCheck
+  LDY result
+  BEQ .CheckBulletCollision_ContinueLoop
   JSR DeleteAndShiftBullets
   JSR DeleteAndShiftEnemies
+  JMP .CheckBulletCollision_Complete
+.CheckBulletCollision_ContinueLoop:
+  LDY index2
+  INY
+  INY
+  STY index2
+  CPY #$14 ;Outside bullet array
+  BNE .CheckBulletCollision_EnemyLoop
 .CheckBulletCollision_Complete:
   RTS
 
