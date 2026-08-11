@@ -295,6 +295,8 @@ CheckBulletCollision:
   LDY result
   BEQ .CheckBulletCollision_ContinueLoop
   JSR DeleteAndShiftBullets
+  LDY index2
+  STY index
   JSR DeleteAndShiftEnemies
   JMP .CheckBulletCollision_Complete
 .CheckBulletCollision_ContinueLoop:

@@ -27,6 +27,7 @@
 buttons1 .rs 1
 buttons1Held .rs 1
 prevButtons1 .rs 1
+frame .rs 1
 
 ;Generic variables
 pointerLo .rs 1   ; pointers declared in RAM (each .rs goes to next register)
@@ -130,40 +131,88 @@ OnInit:
   RTS
 
 OnTick:
+  INC frame
+  LDA fireCooldown
+  BEQ .OnTick_UpdateBullets
+  LDA buttons1
+  AND #%01000000
+  BEQ .OnTick_DecFireCooldown
+  LDA buttons1Held
+  AND #%01000000
+  BEQ .OnTick_UpdateBullets
+.OnTick_DecFireCooldown:
+  DEC fireCooldown
+.OnTick_UpdateBullets:
   JSR UpdateBullets
 
   RTS
 
 OnInputB:
-  LDA buttons1Held
-  AND #%01000000
-  BEQ .OnInputB_Press
-  RTS
-.OnInputB_Press:
+;  LDA buttons1Held
+;  AND #%01000000
+;  BEQ .OnInputB_Press
+;  RTS
+;.OnInputB_Press:
   LDA fireCooldown
-  BNE .OnInputB_CooldownTimer
-  JSR SpawnBullet
-  LDA #$01
-  STA fireCooldown
+  BEQ .OnInputB_Fire
   RTS
-.OnInputB_CooldownTimer:
-  DEC fireCooldown
+.OnInputB_Fire:
+  JSR SpawnBullet
+  LDA #$0F ;Fires 4 rounds a second
+  STA fireCooldown
   RTS
 
 OnInputA:
+  LDA buttons1Held
+  AND #%10000000
+  BEQ .OnInputA_Press
+  RTS
+.OnInputA_Press:
   ;DRAWING TEXT
   ;; Setting text variable
-  LDA #HIGH(textRow_HelloWorld)
-  STA pointerHi       ; put the high byte of the address into pointer
-  LDA #LOW(textRow_HelloWorld)
-  STA pointerLo       ; put the low byte of the address of background into pointer
+  ;LDA #HIGH(textRow_HelloWorld)
+  ;STA pointerHi       ; put the high byte of the address into pointer
+  ;LDA #LOW(textRow_HelloWorld)
+  ;STA pointerLo       ; put the low byte of the address of background into pointer
   ;; Setting draw position
-  LDA #$21
-  STA startHi
-  LDA #$E0
-  STA startLo
+  ;LDA #$21
+  ;STA startHi
+  ;LDA #$E0
+  ;STA startLo
   ;; Running draw function
-  JSR DrawText
+  ;JSR DrawText
+
+  ;Spawn Enemy
+  ; Write top-left sprite info and pass it into SpawnEnemy function
+  LDA #$BC
+  CLC
+  ADC frame
+  STA spriteData
+  LDA #$01
+  LDX #$02
+  STA spriteData, X
+  LDA #$BC
+  CLC
+  ADC frame
+  INX
+  STA spriteData, X
+  JSR SpawnEnemy
+
+  ;Spawn Enemy
+  ; Write top-left sprite info and pass it into SpawnEnemy function
+  LDA #$0F
+  CLC
+  ADC frame
+  STA spriteData
+  LDA #$01
+  LDX #$02
+  STA spriteData, X
+  LDA #$0F
+  CLC
+  ADC frame
+  INX
+  STA spriteData, X
+  JSR SpawnEnemy
 
   RTS
 
