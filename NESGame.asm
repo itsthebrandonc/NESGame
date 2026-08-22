@@ -65,13 +65,17 @@ fireCooldown .rs 1
 ;; ;; Bullet Object: 2 Bytes
 ;; ;; ;; Bullet Sprite Address
 ;; ;; ;; Bullet Direction
-bulletArray .rs 32
+BULLETARRAY_SIZE = 32
+bulletArray .rs BULLETARRAY_SIZE
+
 
 ;Enemy Array (10 Bytes, 5 Enemies * 2 Bytes)
 ;; ;; Enemy Object: 2 Bytes
 ;; ;; ;; Enemy Sprite Address
 ;; ;; ;; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Fire Cooldown (2 bits, 0-4)
-enemyArray .rs 10
+ENEMYARRAY_SIZE = 10
+enemyArray .rs ENEMYARRAY_SIZE
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -132,6 +136,8 @@ OnInit:
 
 OnTick:
   INC frame
+.OnTick_UpdateEnemies:
+  JSR UpdateEnemies
   LDA fireCooldown
   BEQ .OnTick_UpdateBullets
   LDA buttons1

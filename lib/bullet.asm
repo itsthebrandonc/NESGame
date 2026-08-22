@@ -11,7 +11,7 @@ SpawnBullet:
   BEQ .SpawnBullet_GetNewIndexEnd
   INX
   INX
-  CPX #$20
+  CPX #BULLETARRAY_SIZE
   BEQ .SpawnBullet_DeleteFirstBullet
   JMP .SpawnBullet_GetNewIndexLoop
 .SpawnBullet_DeleteFirstBullet:
@@ -119,13 +119,14 @@ UpdateBullets:
 .UpdateBullets_MoveLoop:
   STX index
   LDA bulletArray, X
-  BEQ .UpdateBullets_MoveInc
+  ;BEQ .UpdateBullets_MoveInc ;If bullets shift properly, shouldn't be needed
+  BEQ .UpdateBullets_MoveComplete
   JSR MoveBullet
 .UpdateBullets_MoveInc:
   LDX index
   INX
   INX
-  CPX #$20
+  CPX #BULLETARRAY_SIZE
   BEQ .UpdateBullets_MoveComplete
   JMP .UpdateBullets_MoveLoop
 .UpdateBullets_MoveComplete:
@@ -133,16 +134,17 @@ UpdateBullets:
 .UpdateBullets_CollisionLoop:
   STX index
   LDA bulletArray, X
-  BEQ .UpdateBullets_CollisionInc
+  ;BEQ .UpdateBullets_CollisionInc ;If bullets shift properly, shouldn't be needed
+  BEQ .UpdateBullets_Complete
   JSR CheckBulletCollision
 .UpdateBullets_CollisionInc:
   LDX index
   INX
   INX
-  CPX #$20
+  CPX #BULLETARRAY_SIZE
   BEQ .UpdateBullets_Complete
   JMP .UpdateBullets_CollisionLoop
-.UpdateBullets_Complete
+.UpdateBullets_Complete:
   RTS
 
 ;; MoveBullet
@@ -163,12 +165,12 @@ MoveBullet:
   STA direction
   TAY
   CPY #$07
-  BNE .MoveBullet_Check1 ; W
-  JMP .MoveBullet_West
+  BNE .MoveBullet_Check1 
+  JMP .MoveBullet_West ; W
 .MoveBullet_Check1:
   CPY #$06
-  BNE .MoveBullet_Check2 ; E
-  JMP .MoveBullet_East
+  BNE .MoveBullet_Check2
+  JMP .MoveBullet_East ; E
 .MoveBullet_Check2:
   CPY #$03
   BCS .MoveBullet_Check3
@@ -185,10 +187,11 @@ MoveBullet:
   BCC .MoveBullet_North2 ; Less than previous value. Bullet not looped.
   JMP .MoveBullet_Delete
 .MoveBullet_North2:
-  LDX #$00
-  STX spriteDataPos
-  STA value
-  JSR UpdateSprite
+  ;;LDX #$00
+  ;;STX spriteDataPos
+  ;;STA value
+  ;;JSR UpdateSprite
+  STA $0200, X
   LDY direction
   BEQ .MoveBullet_Complete
   CPY #$01
@@ -204,10 +207,11 @@ MoveBullet:
   BCS .MoveBullet_South2 ; More than previous value. Bullet not looped.
   JMP .MoveBullet_Delete
 .MoveBullet_South2:
-  LDX #$00
-  STX spriteDataPos
-  STA value
-  JSR UpdateSprite
+  ;;LDX #$00
+  ;;STX spriteDataPos
+  ;;STA value
+  ;;JSR UpdateSprite
+  STA $0200, X
   LDY direction
   CPY #$03
   BEQ .MoveBullet_Complete
@@ -224,10 +228,11 @@ MoveBullet:
   BCS .MoveBullet_East2 ; More than previous value. Bullet not looped.
   JMP .MoveBullet_Delete
 .MoveBullet_East2:
-  LDX #$03
-  STX spriteDataPos
-  STA value
-  JSR UpdateSprite
+  ;;LDX #$03
+  ;;STX spriteDataPos
+  ;;STA value
+  ;;JSR UpdateSprite
+  STA $0203, X
   JMP .MoveBullet_Complete
 .MoveBullet_West:
   LDX spriteAddr
@@ -239,17 +244,22 @@ MoveBullet:
   BCC .MoveBullet_West2 ; Less than previous value. Bullet not looped.
   JMP .MoveBullet_Delete
 .MoveBullet_West2:
-  LDX #$03
-  STX spriteDataPos
-  STA value
-  JSR UpdateSprite
+  ;;LDX #$03
+  ;;STX spriteDataPos
+  ;;STA value
+  ;;JSR UpdateSprite
+  STA $0203, X
 .MoveBullet_Complete:
   RTS
 .MoveBullet_Delete:
   JSR DeleteAndShiftBullets
   LDX index
-  CMP #$18
+  INX
+  INX
+  CPX #BULLETARRAY_SIZE
   BEQ .MoveBullet_Complete
+  DEX
+  DEX
   DEX
   DEX
   STX index ; In case objects are shifted, check the previous index again
@@ -355,7 +365,7 @@ DeleteAndShiftBullets:
   STA bulletArray, X
   INX
   INY
-  CPX #$20
+  CPX #BULLETARRAY_SIZE
   BEQ .DeleteAndShiftBullets_Complete
   JMP .DeleteAndShiftBullets_ShiftLoop
 .DeleteAndShiftBullets_Complete

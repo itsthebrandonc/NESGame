@@ -14,7 +14,7 @@ SpawnEnemy:
   BEQ .SpawnEnemy_GetNewIndexEnd
   INX
   INX
-  CPX #$0A
+  CPX #ENEMYARRAY_SIZE
   BEQ .SpawnEnemy_ArrayFull
   JMP .SpawnEnemy_GetNewIndexLoop
 .SpawnEnemy_ArrayFull:
@@ -78,6 +78,182 @@ SpawnEnemy:
 
   RTS
 
+;; UpdateEnemies
+;; ;; Move all enemies on screen and then check collision with player
+UpdateEnemies:
+  LDX #$0
+.UpdateEnemies_MoveLoop:
+  LDA enemyArray, X
+  ;BEQ .UpdateEnemies_MoveInc ;If enemies shift properly, shouldn't be needed
+  BEQ .UpdateEnemies_MoveComplete
+  STX index
+  JSR MoveEnemy
+.UpdateEnemies_MoveInc:
+  LDX index
+  INX
+  INX
+  CPX #ENEMYARRAY_SIZE
+  BEQ .UpdateEnemies_MoveComplete
+  JMP .UpdateEnemies_MoveLoop
+.UpdateEnemies_MoveComplete:
+  LDX #$0
+.UpdateEnemies_CollisionLoop
+  LDA enemyArray, X
+  ;BEQ .UpdateEnemies_CollsionInc ;If enemies shift properly, shouldn't be needed
+  BEQ .UpdateEnemies_Complete
+  STX index
+  JSR CheckEnemyCollision
+.UpdateEnemies_CollsionInc:
+  LDX index
+  INX
+  INX
+  CPX #ENEMYARRAY_SIZE
+  BEQ .UpdateEnemies_Complete
+  JMP .UpdateEnemies_CollisionLoop
+.UpdateEnemies_Complete:
+  RTS
+
+;; MoveEnemy
+;; ;; Moves enemy one tick forward in given direction
+;; ;; Enemy Object: 2 Bytes.
+;; ;; ;; Enemy Sprite Address
+;; ;; ;; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Fire Cooldown (2 bits, 0-4)
+;; ;; Parameters:
+;; ;; ;; index - starting array index of enemy.
+MoveEnemy:
+  LDX #$02
+  STX speed
+  LDX index
+  LDA enemyArray, X ; Sprite Address
+  STA spriteAddr
+  INX
+  LDA enemyArray, X ; Direction
+  CMP #%00011100
+  LSR A
+  LSR A
+  STA direction
+  TAY
+  CPY #$07
+  BNE .MoveEnemy_Check1
+  JMP .MoveEnemy_West ; W
+.MoveEnemy_Check1:
+  CPY #$06
+  BNE .MoveEnemy_Check2
+  JMP .MoveEnemy_East ; E
+.MoveEnemy_Check2:
+  CPY #$03
+  BCS .MoveEnemy_Check3
+  JMP .MoveEnemy_North ; N, NE, NW
+.MoveEnemy_Check3:
+  JMP .MoveEnemy_South ; S, SE, SW
+.MoveEnemy_North:
+  LDX spriteAddr
+  LDA $0200, X
+  STA temp
+  SEC
+  SBC speed
+  CMP temp
+  BCC .MoveEnemy_North2 ; Less than previous value. Enemy not looped.
+  ;JMP .MoveEnemy_Delete
+.MoveEnemy_North2:
+  STA $0200, X ; top left
+  STA $0204, X ; top right
+  CLC
+  ADC #$08    ; shift bottom sprites down
+  STA $0208, X ; bottom left
+  STA $020C, X ; bottom right
+
+  LDY direction
+  BEQ .MoveEnemy_CompleteEarly
+  CPY #$01
+  BEQ .MoveEnemy_East
+  JMP .MoveEnemy_West
+.MoveEnemy_South:
+  LDX spriteAddr
+  LDA $0200, X
+  STA temp
+  CLC
+  ADC speed
+  CMP temp
+  BCS .MoveEnemy_South2 ; More than previous value. Enemy not looped.
+  ;JMP .MoveEnemy_Delete
+.MoveEnemy_South2:
+  STA $0200, X ; top left
+  STA $0204, X ; top right
+  CLC
+  ADC #$08    ; shift bottom sprites down
+  STA $0208, X ; bottom left
+  STA $020C, X ; bottom right
+
+  LDY direction
+  CPY #$03
+  BEQ .MoveEnemy_CompleteEarly
+  CPY #$04
+  BEQ .MoveEnemy_East
+  JMP .MoveEnemy_West
+.MoveEnemy_CompleteEarly:
+  JMP .MoveEnemy_Complete
+.MoveEnemy_East;
+  LDX spriteAddr
+  LDA $0203, X
+  STA temp
+  CLC
+  ADC speed
+  CMP temp
+  BCS .MoveEnemy_East2 ; More than previous value. Enemy not looped.
+  ;JMP .MoveEnemy_Delete
+.MoveEnemy_East2:
+  STA $0203, X ; top left
+  STA $020B, X ; bottom left
+  CLC
+  ADC #$08 ; shift right tiles
+  STA $0207, X ; top right
+  STA $020F, X ; bottom right
+
+  JMP .MoveEnemy_Complete
+.MoveEnemy_West:
+  LDX spriteAddr
+  LDA $0203, X
+  STA temp
+  SEC
+  SBC speed
+  CMP temp
+  BCC .MoveEnemy_West2 ; Less than previous value. Enemy not looped.
+  ;JMP .MoveEnemy_Delete
+.MoveEnemy_West2:
+  STA $0203, X ; top left
+  STA $020B, X ; bottom left
+  CLC
+  ADC #$08 ; shift right tiles
+  STA $0207, X ; top right
+  STA $020F, X ; bottom right
+.MoveEnemy_Complete
+  RTS
+;.MoveEnemy_Delete
+;  JSR DeleteAndShiftEnemies
+;  LDX index
+;  INX
+;  INX
+;  CPX #ENEMYARRAY_SIZE 
+;  BEQ .MoveEnemy_Complete
+;  DEX
+;  DEX
+;  DEX
+;  DEX
+;  STX index ; In case objects are shifted, check the prevoius index again
+;  RTS
+
+;; CheckEnemyCollision
+;; ;; Checks for enemy collision with player
+;; ;; Enemy Object : 2 Bytes.
+;; ;; ;; Enemy Sprite Address
+;; ;; ;; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Fire Cooldown (2 bits, 0-4)
+;; ;; Parameters:
+;; ;; ;; index - starting array index of enemy.
+CheckEnemyCollision:
+  RTS ; TODO - To implement
+
+
 ;; DeleteAndShiftEnemies
 ;; ;; Deletes enemy in array and shifts everything to the right left (FIFO)
 ;; ;; Parameters:
@@ -117,10 +293,6 @@ DeleteAndShiftEnemies:
   INX
   STA enemyArray, X
 
-  ;If index of #$08, no shift needed (end of array)
-  LDX index
-  CMP #$08
-  BEQ .DeleteAndShiftEnemies_Complete
 .DeleteAndShiftEnemies_ShiftRemaining
   ;Shift all remaining enemies
   LDY index
@@ -128,6 +300,8 @@ DeleteAndShiftEnemies:
   TAX
   INX
   INX
+  CPX #ENEMYARRAY_SIZE
+  BEQ .DeleteAndShiftEnemies_Complete
 .DeleteAndShiftEnemies_ShiftLoop
   LDA enemyArray, X
   BEQ .DeleteAndShiftEnemies_Complete
@@ -142,7 +316,7 @@ DeleteAndShiftEnemies:
   STA enemyArray, X
   INX
   INY
-  CPX #$0A
+  CPX #ENEMYARRAY_SIZE
   BEQ .DeleteAndShiftEnemies_Complete
   JMP .DeleteAndShiftEnemies_ShiftLoop
 .DeleteAndShiftEnemies_Complete
