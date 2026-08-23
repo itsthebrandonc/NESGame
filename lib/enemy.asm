@@ -30,6 +30,13 @@ SpawnEnemy:
   LDX index
   LDA spriteAddr
   STA enemyArray, X ; Sprite Address stored in Enemy object's first byte
+  JSR GetDirectionToPlayer
+  LDA direction
+  ASL A
+  ASL A
+  LDX index
+  INX
+  STA enemyArray, X ; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Fire Cooldown (2 bits, 0-4) stored in Enemy object's second byte
 
   ;Y Pos
   LDX spriteAddr
@@ -320,4 +327,24 @@ DeleteAndShiftEnemies:
   BEQ .DeleteAndShiftEnemies_Complete
   JMP .DeleteAndShiftEnemies_ShiftLoop
 .DeleteAndShiftEnemies_Complete
+  RTS
+
+;; GetDirectionToPlayer
+;; ;; Finds the direction the enemy must travel to reach the player
+;; ;; Parameters:
+;; ;; ;; index - starting array index of enemy
+;; ;; Returns:
+;; ;; ;; direction - direction to the player (N, NE, NW, S, SE, SW, E, W)
+GetDirectionToPlayer:
+  LDA spriteAddr
+  BNE .GetDirectionToPlayer_Data1Loaded
+  LDX index
+  LDA enemyArray, X ; Sprite Address
+  STA spriteAddr
+  JSR LoadSpriteData
+.GetDirectionToPlayer_Data1Loaded:
+  LDA #$00
+  STA spriteAddr2
+  JSR LoadSpriteData2
+  JSR GetDirectionToSprite
   RTS

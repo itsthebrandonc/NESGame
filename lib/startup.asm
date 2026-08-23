@@ -534,16 +534,13 @@ UpdateSprite:
   STA $0200, X
   RTS
 
-;; GetSpriteData
-;; ;; Gets sprite information
+;; LoadSpriteData
+;; ;; Gets sprite information and stores it in variable spriteData
 ;; ;; Parameters:
-;; ;; ;; spriteNo   - Sprite number (optional if spriteAddr)
-;; ;; ;; spriteAddr  - Sprite's starting address (or $00 to load it using spriteNo)
-;; ;; ;; spriteDataPos - 0 = Y Pos, 1 = Tile Number, 2 = Attributes, 3 = X Pos
-;; ;; Returns:
 ;; ;; ;; spriteAddr  - Sprite's starting address
-;; ;; ;; value      - New value
-GetSpriteData:
+;; ;; Returns:
+;; ;; ;; spriteData  - 4 bytes of information for the sprite
+LoadSpriteData:
   ; 64 max sprites, 4 bytes of information each. Sprite 0 = $0200-$0203, Sprite 1 = $0204-0207, etc. $0200 - $02FF
   ; Attributes:
   ;; Bit 7 - flip sprite vertically
@@ -552,23 +549,44 @@ GetSpriteData:
   ;; Bit 4, 3 and 2 - None
   ;; Bit 1 and 0 = Color pallete ($00 - $04)
   LDX spriteAddr
-  BNE .GetSpriteData_GetToSpriteData ; Sprite address already loaded
-  LDX #$00
-  STX spriteAddr
-  JSR LoadSpriteAddress
-  LDX spriteAddr
-.GetSpriteData_GetToSpriteData: ;Gets to the correct sprite data byte (0-3)
-  LDY spriteDataPos
-  CPY #$00
-  BEQ .GetSpriteData_Complete
-.GetSpriteData_SpriteDataLoop:
-  INX
-  DEY
-  CPY #$00
-  BNE .GetSpriteData_SpriteDataLoop
-.GetSpriteData_Complete:
+  LDY #$00
+.LoadSpriteData_SpriteDataLoop:
   LDA $0200, X
-  STA value
+  STA spriteData, Y
+  INY
+  INY
+  INY
+  LDA $0203, X
+  STA spriteData, Y
+  ;JMP .LoadSpriteData_SpriteDataLoop
+.LoadSpriteData_Complete:
+  RTS
+
+;; LoadSpriteData2
+;; ;; Gets sprite information and stores it in variable spriteData2
+;; ;; Parameters:
+;; ;; ;; spriteAddr2  - Sprite's starting address
+;; ;; Returns:
+;; ;; ;; spriteData2  - 4 bytes of information for the sprite
+LoadSpriteData2:
+  ; 64 max sprites, 4 bytes of information each. Sprite 0 = $0200-$0203, Sprite 1 = $0204-0207, etc. $0200 - $02FF
+  ; Attributes:
+  ;; Bit 7 - flip sprite vertically
+  ;; Bit 6 - slip sprite horizontally
+  ;; Bit 5 - Priority (0 = in front of background, 1 = behind background)
+  ;; Bit 4, 3 and 2 - None
+  ;; Bit 1 and 0 = Color pallete ($00 - $04)
+  LDX spriteAddr2
+  LDY #$00
+.LoadSpriteData2_SpriteDataLoop:
+  LDA $0200, X
+  STA spriteData2, Y
+  CPY #$03
+  BEQ .LoadSpriteData2_Complete
+  INX
+  INY
+  JMP .LoadSpriteData2_SpriteDataLoop
+.LoadSpriteData2_Complete:
   RTS
 
 ;; IncSpritePosition
@@ -636,6 +654,8 @@ IncSpritePos:
 ;; ;; Parameters:
 ;; ;; ;; spriteData - Sprite1 Y Pos, unsused, unused, XPos
 ;; ;; ;; spriteData2 - Sprite2 Y Pos, unused, unused, YPos
+;; ;; Returns:
+;; ;; ;; result - False ($00) or True ($01) if sprites overlap
 SpriteCollisionCheck:
   ;spriteData = Sprite1 Y1
   ;spriteData + width = Sprite1 Y2
@@ -697,6 +717,43 @@ SpriteCollisionCheck:
   LDX #$01
   STX result
   RTS
+
+;; GetDirectionToSprite
+;; ;; Given two sprites, get direction from sprite1 to sprite2
+;; ;; Parameters:
+;; ;; ;; spriteData - Sprite1 Y Pos, unused, unused, XPos
+;; ;; ;; spriteData2 - Sprite2 Y Pos, unused, unused, YPos
+;; ;; Returns:
+;; ;; ;; direction - N ($00), NE ($01), NW ($02), S ($03), SE ($04), SW ($05), E ($06), W ($07)
+GetDirectionToSprite:
+.GetDirectionToSprite_Y:
+  LDA spriteData
+  CMP spriteData2
+  BEQ .GetDirectionToSprite_YZ
+  BCC .GetDirectionToSprite_YS
+.GetDirectionToSprite_YN:
+  LDX #$00 ; N ($00), NE ($01), NW ($02)
+  JMP .GetDirectionToSprite_Y
+.GetDirectionToSprite_YS:
+  LDX #$03 ; S ($03), SE ($04), SW ($05)
+  JMP .GetDirectionToSprite_X
+.GetDirectionToSprite_YZ:
+  LDX #$05 ; E ($06), W ($07)
+.GetDirectionToSprite_X:
+  LDY #$03
+  LDA spriteData2, Y
+  STA temp
+  LDA spriteData, Y
+  CMP temp
+  BCC .GetDirectionToSprite_XW
+.GetDirectionToSprite_XE:
+  INX
+.GetDirectionToSprite_XW:
+  INX
+  STX direction
+  RTS
+
+
 
 ;; Override Funcions
 

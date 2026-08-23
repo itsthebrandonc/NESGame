@@ -55,6 +55,7 @@ textIsDrawing .rs 1
 ;Sprite variables
 spriteNo .rs 1
 spriteAddr .rs 1
+spriteAddr2 .rs 1
 spriteDataPos .rs 1
 spriteData .rs 4 ; Y Pos, Tile Number, Attributes, X Pos
 spriteData2 .rs 4 ; Y Pos, Tile Number, Attributes, X Pos
@@ -122,22 +123,21 @@ OnInit:
 
   ;Spawn Enemy
   ; Write top-left sprite info and pass it into SpawnEnemy function
-  LDA #$0F
-  STA spriteData
-  LDA #$01
-  LDX #$02
-  STA spriteData, X
-  LDA #$0F
-  INX
-  STA spriteData, X
-  JSR SpawnEnemy
+  ;LDA #$0F
+  ;STA spriteData
+  ;LDA #$01
+  ;LDX #$02
+  ;STA spriteData, X
+  ;LDA #$0F
+  ;INX
+  ;STA spriteData, X
+  ;JSR SpawnEnemy
 
   RTS
 
 OnTick:
   INC frame
-.OnTick_UpdateEnemies:
-  JSR UpdateEnemies
+  ;JSR UpdateEnemies
   LDA fireCooldown
   BEQ .OnTick_UpdateBullets
   LDA buttons1
@@ -190,35 +190,37 @@ OnInputA:
 
   ;Spawn Enemy
   ; Write top-left sprite info and pass it into SpawnEnemy function
-  LDA #$BC
-  CLC
-  ADC frame
-  STA spriteData
-  LDA #$01
-  LDX #$02
-  STA spriteData, X
-  LDA #$BC
-  CLC
-  ADC frame
-  INX
-  STA spriteData, X
-  JSR SpawnEnemy
+  ;LDA #$BC
+  ;CLC
+  ;ADC frame
+  ;STA spriteData
+  ;LDA #$01
+  ;LDX #$02
+  ;STA spriteData, X
+  ;LDA #$BC
+  ;CLC
+  ;ADC frame
+  ;INX
+  ;STA spriteData, X
+  ;JSR SpawnEnemy
 
   ;Spawn Enemy
   ; Write top-left sprite info and pass it into SpawnEnemy function
-  LDA #$0F
-  CLC
-  ADC frame
-  STA spriteData
-  LDA #$01
-  LDX #$02
-  STA spriteData, X
-  LDA #$0F
-  CLC
-  ADC frame
-  INX
-  STA spriteData, X
-  JSR SpawnEnemy
+  ;LDA #$0F
+  ;CLC
+  ;ADC frame
+  ;STA spriteData
+  ;LDA #$01
+  ;LDX #$02
+  ;STA spriteData, X
+  ;LDA #$0F
+  ;CLC
+  ;ADC frame
+  ;INX
+  ;STA spriteData, X
+  ;JSR SpawnEnemy
+
+  JSR UpdateEnemies
 
   RTS
 
