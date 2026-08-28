@@ -73,7 +73,7 @@ bulletArray .rs BULLETARRAY_SIZE
 ;Enemy Array (10 Bytes, 5 Enemies * 2 Bytes)
 ;; ;; Enemy Object: 2 Bytes
 ;; ;; ;; Enemy Sprite Address
-;; ;; ;; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Fire Cooldown (2 bits, 0-4)
+;; ;; ;; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Move Cooldown (2 bits, 0-4)
 ENEMYARRAY_SIZE = 10
 enemyArray .rs ENEMYARRAY_SIZE
 
@@ -111,12 +111,17 @@ OnInit:
 
   ;Spawn Enemy
   ; Write top-left sprite info and pass it into SpawnEnemy function
-  LDA #$BC
+
+  ; Q1 : Y = #$0A, X = #$0A
+  ; Q2 : Y = #$0A, X = #$F0
+  ; Q3 : Y = #$BC, X = #$0A
+  ; Q4 : Y = #$BC, X = #$F0
+  LDA #$0A
   STA spriteData
   LDA #$01
   LDX #$02
   STA spriteData, X
-  LDA #$BC
+  LDA #$0A
   INX
   STA spriteData, X
   JSR SpawnEnemy
@@ -137,7 +142,7 @@ OnInit:
 
 OnTick:
   INC frame
-  ;JSR UpdateEnemies
+  JSR UpdateEnemies
   LDA fireCooldown
   BEQ .OnTick_UpdateBullets
   LDA buttons1
@@ -220,7 +225,7 @@ OnInputA:
   ;STA spriteData, X
   ;JSR SpawnEnemy
 
-  JSR UpdateEnemies
+  ;JSR UpdateEnemies
 
   RTS
 

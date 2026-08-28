@@ -31,12 +31,14 @@ SpawnEnemy:
   LDA spriteAddr
   STA enemyArray, X ; Sprite Address stored in Enemy object's first byte
   JSR GetDirectionToPlayer
-  LDA direction
+  LDA direction ; $00 = N, $01 = NE, $02 = NW, $03 = S, $04 = SE, $05 = SW, $06 = E, $07 = W
   ASL A
   ASL A
+  CLC
+  ADC #$03 ; Cooldown
   LDX index
   INX
-  STA enemyArray, X ; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Fire Cooldown (2 bits, 0-4) stored in Enemy object's second byte
+  STA enemyArray, X ; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Move Cooldown (2 bits, 0-4) stored in Enemy object's second byte
 
   ;Y Pos
   LDX spriteAddr
@@ -88,13 +90,34 @@ SpawnEnemy:
 ;; UpdateEnemies
 ;; ;; Move all enemies on screen and then check collision with player
 UpdateEnemies:
-  LDX #$0
+  LDX #$00
+  STX index
 .UpdateEnemies_MoveLoop:
   LDA enemyArray, X
   ;BEQ .UpdateEnemies_MoveInc ;If enemies shift properly, shouldn't be needed
   BEQ .UpdateEnemies_MoveComplete
+  TXA
+  TAY
+  INY
+  LDA enemyArray, Y
+  AND #%00000011
+  BNE .UpdateEnemies_DecMoveCooldown
   STX index
   JSR MoveEnemy
+  LDY index
+  INY
+  LDA enemyArray, Y
+  AND #%11111100
+  ORA #%00000011
+  STA enemyArray, Y
+  JMP .UpdateEnemies_MoveInc
+.UpdateEnemies_DecMoveCooldown
+  LDY index
+  INY
+  LDX enemyArray, Y
+  DEX
+  TXA
+  STA enemyArray, Y
 .UpdateEnemies_MoveInc:
   LDX index
   INX
@@ -103,7 +126,7 @@ UpdateEnemies:
   BEQ .UpdateEnemies_MoveComplete
   JMP .UpdateEnemies_MoveLoop
 .UpdateEnemies_MoveComplete:
-  LDX #$0
+  LDX #$00
 .UpdateEnemies_CollisionLoop
   LDA enemyArray, X
   ;BEQ .UpdateEnemies_CollsionInc ;If enemies shift properly, shouldn't be needed
@@ -124,7 +147,7 @@ UpdateEnemies:
 ;; ;; Moves enemy one tick forward in given direction
 ;; ;; Enemy Object: 2 Bytes.
 ;; ;; ;; Enemy Sprite Address
-;; ;; ;; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Fire Cooldown (2 bits, 0-4)
+;; ;; ;; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Move Cooldown (2 bits, 0-4)
 ;; ;; Parameters:
 ;; ;; ;; index - starting array index of enemy.
 MoveEnemy:
@@ -254,7 +277,7 @@ MoveEnemy:
 ;; ;; Checks for enemy collision with player
 ;; ;; Enemy Object : 2 Bytes.
 ;; ;; ;; Enemy Sprite Address
-;; ;; ;; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Fire Cooldown (2 bits, 0-4)
+;; ;; ;; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Move Cooldown (2 bits, 0-4)
 ;; ;; Parameters:
 ;; ;; ;; index - starting array index of enemy.
 CheckEnemyCollision:

@@ -733,7 +733,7 @@ GetDirectionToSprite:
   BCC .GetDirectionToSprite_YS
 .GetDirectionToSprite_YN:
   LDX #$00 ; N ($00), NE ($01), NW ($02)
-  JMP .GetDirectionToSprite_Y
+  JMP .GetDirectionToSprite_X
 .GetDirectionToSprite_YS:
   LDX #$03 ; S ($03), SE ($04), SW ($05)
   JMP .GetDirectionToSprite_X
