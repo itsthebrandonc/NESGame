@@ -30,15 +30,10 @@ SpawnEnemy:
   LDX index
   LDA spriteAddr
   STA enemyArray, X ; Sprite Address stored in Enemy object's first byte
-  JSR GetDirectionToPlayer
-  LDA direction ; $00 = N, $01 = NE, $02 = NW, $03 = S, $04 = SE, $05 = SW, $06 = E, $07 = W
-  ASL A
-  ASL A
-  CLC
-  ADC #$03 ; Cooldown
-  LDX index
   INX
-  STA enemyArray, X ; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Move Cooldown (2 bits, 0-4) stored in Enemy object's second byte
+  LDA #%00000011 ; Sets cooldown to 3
+  STA enemyArray, X
+  JSR SetEnemyDirectionToPlayer
 
   ;Y Pos
   LDX spriteAddr
@@ -118,6 +113,12 @@ UpdateEnemies:
   DEX
   TXA
   STA enemyArray, Y
+  AND #%00000011
+  CMP #%00000001
+  BNE .UpdateEnemies_MoveInc
+  LDX #$00
+  STX spriteAddr
+  JSR SetEnemyDirectionToPlayer_DEBUGTEST
 .UpdateEnemies_MoveInc:
   LDX index
   INX
@@ -158,7 +159,7 @@ MoveEnemy:
   STA spriteAddr
   INX
   LDA enemyArray, X ; Direction
-  CMP #%00011100
+  AND #%00011100
   LSR A
   LSR A
   STA direction
@@ -351,6 +352,55 @@ DeleteAndShiftEnemies:
   JMP .DeleteAndShiftEnemies_ShiftLoop
 .DeleteAndShiftEnemies_Complete
   RTS
+
+;; SetEnemyDirectionToPlayer
+;; ;; Sets the direction of the enemy, stored in the second Enemy object byte (amongst other data)
+;; ;; Parameters:
+;; ;; ;; index - starting array index of enemy
+SetEnemyDirectionToPlayer:
+  ;Check current direction
+  ;LDX index
+  ;INX
+  ;LDA enemyArray, X
+  ;AND #%00011100
+  ;STA direction
+  ;RTS
+.SetEnemyDirectionToPlayer_GetNewDirection:
+  LDX index
+  LDA enemyArray, X ; Sprite Address
+  STA spriteAddr
+  ;INX
+  ;LDA enemyArray, X
+  ;AND #%00011100
+  ;STA enemyArray, X ; Clear direction
+  JSR GetDirectionToPlayer
+  LDA direction ; $00 = N, $01 = NE, $02 = NW, $03 = S, $04 = SE, $05 = SW, $06 = E, $07 = W
+  ASL A
+  ASL A
+  AND #%00011100
+  STA direction
+  LDX index
+  INX
+  LDA enemyArray, X
+  ;AND #%00011100
+  ORA direction
+  ;ORA enemyArray, X
+  STA enemyArray, X ; 3 unused bits, Enemy Direction (3 bits, 0-8), Enemy Move Cooldown (2 bits, 0-4) stored in Enemy object's second byte
+  RTS
+
+SetEnemyDirectionToPlayer_DEBUGTEST:
+  LDX frame
+  ASL A
+  ASL A
+  AND #%00011100
+  STA direction
+  LDX index
+  INX
+  LDA enemyArray, X
+  ;AND #%00011100
+  ORA direction
+  STA enemyArray, X
+  RTS ; TEST ONLY
 
 ;; GetDirectionToPlayer
 ;; ;; Finds the direction the enemy must travel to reach the player

@@ -745,10 +745,10 @@ GetDirectionToSprite:
   STA temp
   LDA spriteData, Y
   CMP temp
-  BCC .GetDirectionToSprite_XW
-.GetDirectionToSprite_XE:
-  INX
+  BCC .GetDirectionToSprite_XE
 .GetDirectionToSprite_XW:
+  INX
+.GetDirectionToSprite_XE:
   INX
   STX direction
   RTS

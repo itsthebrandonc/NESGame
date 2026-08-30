@@ -116,7 +116,7 @@ OnInit:
   ; Q2 : Y = #$0A, X = #$F0
   ; Q3 : Y = #$BC, X = #$0A
   ; Q4 : Y = #$BC, X = #$F0
-  LDA #$0A
+  LDA #$BC
   STA spriteData
   LDA #$01
   LDX #$02
@@ -226,6 +226,9 @@ OnInputA:
   ;JSR SpawnEnemy
 
   ;JSR UpdateEnemies
+  LDX #$00
+  STX index
+  JSR SetEnemyDirectionToPlayer_DEBUGTEST
 
   RTS
 
