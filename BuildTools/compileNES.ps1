@@ -3,7 +3,7 @@
 $rom = Get-ChildItem -Name -Path "./Build/$projectName.nes" -ErrorAction SilentlyContinue
 if ($rom)
 {
-    Move-Item "./Build/$rom" -Destination "./Backup/$projectName.bck" -Force
+    Move-Item "./Build/$projectName.nes" -Destination "./Backup/$projectName.bck" -Force
 }
 $source = Get-ChildItem -Name "$projectName.asm"
 if (!$source)
@@ -14,7 +14,56 @@ if (!$source)
 Write-Host "`n========================`nCompiling $projectName...`n========================`n" -ForegroundColor Green
 
 $startTime = Get-Date
+
 Start-Process -FilePath "./BuildTools/NESASM3.exe" -ArgumentList "$PWD`\$source" -Wait
+
+#Debug Files
+$lstFile = Get-Content -Path "./$projectName.lst"
+if ($null -ne $lstFile)
+{
+    $mlbFile = ""
+    $mlbFilePath = "./BuildTools/$projectName.mlb"
+
+    foreach ($lstLine in $lstFile)
+    {
+        $addr = ""
+        $label = ""
+
+        if ($lstLine.EndsWith(':')) #LABEL
+        {
+            $lstElements = $($lstLine -split '  ').Where({ -not [string]::IsNullOrWhiteSpace($_) })
+            foreach ($lstElement in $lstElements)
+            {
+                if ($lstElement -match "..:C...")
+                {
+                    #CPU Address
+                    $addr = '0' + $lstElement.Substring(4)
+                }
+            }
+            $lstElement = $lstElements[$lstElements.Count-1]
+            $label = $lstElement.Substring(0,$lstElement.Length-1) -replace '\.','@'
+            if ((![string]::IsNullOrWhiteSpace($addr)) -and (![string]::IsNullOrWhiteSpace($label)))
+            {
+                #Write-Host "LABEL`t$addr`t$label"
+                $mlbFile += "`nNesPrgRom`:$addr`:$label"
+            }
+        }
+        elseif ($lstLine -match "\.rs .`$") #VARIABLE
+        {
+            $lstElements = $($lstLine -split '  ').Where({ -not [string]::IsNullOrWhiteSpace($_) })
+            $addr = $lstElements[$lstElements.Count-2].Trim()
+            $label = $lstElements[$lstElements.Count-1].Substring(0, $($lstElements[$lstElements.Count-1]).IndexOf(" .rs "));
+            if ((![string]::IsNullOrWhiteSpace($addr)) -and (![string]::IsNullOrWhiteSpace($label)))
+            {
+                #Write-Host "VARIABLE`t$addr`t$label"
+                $mlbFile += "`nNesInternalRam`:$addr`:$label"
+            }
+        }
+    }
+    $mlbFile | Out-File -FilePath $mlbFilePath
+    Remove-Item "./$projectName.lst"
+}
+
 $endTime = Get-Date
 $totalTime = ($endTime - $startTime).TotalMilliseconds
 
@@ -26,7 +75,7 @@ if (!$rom)
     Write-Host "`n========================`nROM Failed`n========================`n" -ForegroundColor Red
     Copy-Item -Path "./BuildTools/NESASM3.exe" -Destination "./NESASM3.exe" -Force
     $bat = Get-ChildItem  -Path "./BuildTools" -Name -Include *.bat
-    Start-Process -FilePath "./BuildTools/$bat" -ArgumentList "$projectName.asm" -Wait
+    Start-Process -FilePath "./BuildTools/$bat" -ArgumentList "-i" "$projectName.asm" -Wait
     Remove-Item -Path "./NESASM3.exe"
     Remove-Item -Path "./$projectName.fns"
 }

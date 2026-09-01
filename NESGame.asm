@@ -7,6 +7,7 @@
 
 ; Sprites / Pallets / Background
   
+  .list
   .bank 1
   .org $E000    ;;align the background data so the lower address is $00
   .include "lib/background.asm"
