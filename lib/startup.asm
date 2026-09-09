@@ -228,7 +228,7 @@ ReadA:
   STA buttons1Held
   JMP ReadB
 .ADown:
-  TYA
+  LDA prevButtons1
   AND #%10000000  ; A
   BEQ .APress
   LDA buttons1Held

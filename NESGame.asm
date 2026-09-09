@@ -63,6 +63,9 @@ spriteData2 .rs 4 ; Y Pos, Tile Number, Attributes, X Pos
 playerDirection .rs 1 ; N ($00), NE ($01), NW ($02), S ($03), SE ($04), SW ($05), E ($06), W ($07)
 fireCooldown .rs 1
 
+;Player variables
+playerRestrictMoveInput .rs 1 ; 0 = Allow movement input, 1 = Do not allow movement input
+
 ;Bullet Array (32 Bytes, 16 Bullets * 2 Bytes)
 ;; ;; Bullet Object: 2 Bytes
 ;; ;; ;; Bullet Sprite Address
@@ -178,8 +181,19 @@ OnInputA:
   LDA buttons1Held
   AND #%10000000
   BEQ .OnInputA_Press
+  ;JMP .OnInputA_Held
   RTS
 .OnInputA_Press:
+  ;TOGGLE PLAYER MOVEMENT
+  LDA playerRestrictMoveInput
+  BEQ .OnInputA_SetRestrictMoveInput
+  LDA #$00
+  STA playerRestrictMoveInput
+  RTS
+.OnInputA_SetRestrictMoveInput:
+  LDA #$01
+  STA playerRestrictMoveInput
+  RTS
   ;DRAWING TEXT
   ;; Setting text variable
   ;LDA #HIGH(textRow_HelloWorld)
@@ -227,30 +241,73 @@ OnInputA:
   ;JSR SpawnEnemy
 
   ;JSR UpdateEnemies
-  LDX #$00
-  STX index
-  JSR SetEnemyDirectionToPlayer_DEBUGTEST
+  ;LDX #$00
+  ;STX index
+  ;JSR SetEnemyDirectionToPlayer_DEBUGTEST
 
-  RTS
+  ;RTS
+;.OnInputA_Held:
+ ; LDX buttons1Held
+ ; TXA
+ ; AND #%00001000
+ ; BNE .OnInputA_MoveUp
+ ; TXA
+ ; AND #%00000100
+ ; BNE .OnInputA_MoveDown
+ ; TXA
+ ; AND #%00000010
+ ; BNE .OnInputA_MoveLeft
+ ; TXA
+ ; AND #%00000001
+ ; BNE .OnInputA_MoveRight
+ ; RTS
+;.OnInputA_MoveUp:
+;  JSR MoveCharacterUp
+;  RTS
+;.OnInputA_MoveDown:
+;  JSR MoveCharacterDown
+;  RTS
+;.OnInputA_MoveLeft:
+;  JSR MoveCharacterLeft
+;  RTS
+;.OnInputA_MoveRight:
+;  JSR MoveCharacterRight
+;  RTS
 
 OnInputL:
+  LDA playerRestrictMoveInput
+  BEQ .OnInputL_MoveLeft
+  RTS
+.OnInputL_MoveLeft:
   ;Move character left
   JSR MoveCharacterLeft
 .OnInputLComplete:
   RTS
 
 OnInputR:
+  LDA playerRestrictMoveInput
+  BEQ .OnInputR_MoveRight
+  RTS
+.OnInputR_MoveRight:
   ;Move character right
   JSR MoveCharacterRight
   RTS
 
 OnInputU:
+  LDA playerRestrictMoveInput
+  BEQ .OnInputU_MoveUp
+  RTS
+.OnInputU_MoveUp:
   ;Move character up
   JSR MoveCharacterUp
 .OnInputUComplete:
   RTS
 
 OnInputD:
+  LDA playerRestrictMoveInput
+  BEQ .OnInputD_MoveDown
+  RTS
+.OnInputD_MoveDown:
   ;Move character down
   JSR MoveCharacterDown
   RTS

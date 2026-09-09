@@ -69,13 +69,13 @@ $totalTime = ($endTime - $startTime).TotalMilliseconds
 
 Remove-Item * -Include *.fns
 
-$rom = Get-ChildItem -File "$projectName.nes" | Select-Object Name, @{Name="Size"; Expression={[Math]::Round($_.Length / 1KB, 4)}}
+$rom = Get-ChildItem -File "$projectName.nes" -ErrorAction SilentlyContinue | Select-Object Name, @{Name="Size"; Expression={[Math]::Round($_.Length / 1KB, 4)}} -ErrorAction SilentlyContinue
 if (!$rom)
 {
     Write-Host "`n========================`nROM Failed`n========================`n" -ForegroundColor Red
     Copy-Item -Path "./BuildTools/NESASM3.exe" -Destination "./NESASM3.exe" -Force
     $bat = Get-ChildItem  -Path "./BuildTools" -Name -Include *.bat
-    Start-Process -FilePath "./BuildTools/$bat" -ArgumentList "-i" "$projectName.asm" -Wait
+    Start-Process -FilePath "./BuildTools/$bat" -ArgumentList "$projectName.asm" -Wait
     Remove-Item -Path "./NESASM3.exe"
     Remove-Item -Path "./$projectName.fns"
 }

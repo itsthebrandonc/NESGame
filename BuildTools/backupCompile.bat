@@ -2,7 +2,7 @@
 @echo off
 if "%1"=="" (
     call :GET_THIS_DIR
-    NESASM3 %PROJECT_NAME%.asm
+    NESASM3 %PROJECT_NAME%.asm -i
     pause
     goto :EOF
 
