@@ -47,45 +47,9 @@ LoadPalettes:
   CPX #$20              ; copying 32 bytes = 2 palettes
   BNE .LoadPalettesLoop 
 
-;LoadSprites:
-;  LDX #$00              ; start at 0
-;.LoadSpritesLoop:
-;  LDA sprites, x        ; load data from address (sprites +  x)
-;  STA $0200, x          ; Sprite registers start at $0200
-;  INX                   
-;  CPX #$20              ; 32 total bytes for the 8 sprites
-;  BNE .LoadSpritesLoop  
-                
-;LoadBackground:
-;    LDA $2002             ; read PPU status to reset the high/low latch
-;    LDA #$20
-;    STA $2006             ; write the high byte of $2000 address
-;    LDA #$00
-;    STA $2006             ; write the low byte of $2000 address
-  
-;    LDA #LOW(background)
-;    STA pointerLo       ; put the low byte of the address of background into pointer
-;    LDA #HIGH(background)
-;    STA pointerHi       ; put the high byte of the address into pointer
-    
-;    LDX #$00           
-;    LDY #$00            ; inside loop counter
-;    OutsideLoop:
-;      InsideLoop:
-;        LDA [pointerLo], y  ; copy one background byte from address in pointer (Lo->Hi) + Y
-;        STA $2007           ; this runs 256 * 4 times
-;        
-;        INY                 
-;        CPY #$00
-;        BNE InsideLoop      ; run inside loop 256 until variable ticks back over to 00
-;        
-;        INC pointerHi       ; increate high byte after all low bytes are iterated through
-;        
-;        INX
-;        CPX #$04
-;        BNE OutsideLoop     ; run outside loop 4 times
+  JMP LoadBackground_Grid
 
-LoadBackground:
+LoadBackground_UNUSED: ;Currently unused
   LDA $2002             ; read PPU status to reset the high/low latch
   LDA #$20
   STA $2006             ; write the high byte of $2000 address
@@ -132,6 +96,50 @@ LoadBackground:
   INX
   CPX #$1E
   BCC .BackgroundLoop     ; run outside loop 30 times (for 30 rows)
+
+LoadBackground_Grid:
+  LDA $2002             ; read PPU status to reset the high/low latch
+  LDA #$20
+  STA $2006             ; write the high byte of $2000 address
+  LDA #$00
+  STA $2006             ; write the low byte of $2000 address
+
+  LDX #$00            ; column counter (0-32)
+  LDY #$00            ; row counter (0-30)
+  STX index           ; space between grid points (rows)
+.BackgroundLoop:
+  LDX #$00
+  STY temp              ; using Y for counting space between grid points (columns)
+  LDY #$00
+.RowLoop:
+  LDA index
+  BNE .RowLoop_NoGrid
+  CPY #$00
+  BEQ .RowLoop_Grid
+  JMP .RowLoop_NoGrid
+.RowLoop_Grid:
+  LDY #$01 ; Resets space between grid points (columns)
+  LDA #$06 ; Grid pixel
+  JMP .RowLoop_IncX
+.RowLoop_NoGrid:
+  LDA #$00 ; No grid pixel
+.RowLoop_IncX:
+  STA $2007           ; this runs 32 * 30 times
+  DEY
+  INX
+  CPX #$20
+  BNE .RowLoop
+
+  LDA index
+  BNE .RowLoop_IncY
+  LDA #$01 ; Resets space between grid points (rows)
+  STA index
+.RowLoop_IncY:
+  DEC index
+  LDY temp
+  INY
+  CPY #$1E
+  BCC .BackgroundLoop
   
 
   ;; Configuring the PPU Registers
