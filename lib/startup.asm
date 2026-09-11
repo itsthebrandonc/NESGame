@@ -47,9 +47,38 @@ LoadPalettes:
   CPX #$20              ; copying 32 bytes = 2 palettes
   BNE .LoadPalettesLoop 
 
-  JMP LoadBackground_Grid
+LoadBackground:
+  LDA $2002             ; read PPU status to reset the high/low latch
+  LDA #$20
+  STA $2006             ; write the high byte of $2000 address
+  LDA #$00
+  STA $2006             ; write the low byte of $2000 address
 
-LoadBackground_UNUSED: ;Currently unused
+  LDA #LOW(background)
+  STA pointerLo       ; put the low byte of the address of background into pointer
+  LDA #HIGH(background)
+  STA pointerHi       ; put the high byte of the address into pointer
+
+  LDX #$00           
+  LDY #$00            ; inside loop counter
+.BackgroundLoop:
+
+.RowLoop:
+  LDA [pointerLo], y ; copy one background byte from address in pointer (Lo->Hi) + Y
+  STA $2007           ; this runs 256 * 4 times
+  INY
+  CPY #$00            ; run inside loop 256 until variable ticks back over to 00
+  BNE .RowLoop
+
+  INC pointerHi
+  
+  INX                
+  CPX #$04
+  BNE .BackgroundLoop      ; run outside loop 4 times
+
+  JMP BackgroundComplete
+
+LoadBackground_2Deep:
   LDA $2002             ; read PPU status to reset the high/low latch
   LDA #$20
   STA $2006             ; write the high byte of $2000 address
@@ -97,50 +126,51 @@ LoadBackground_UNUSED: ;Currently unused
   CPX #$1E
   BCC .BackgroundLoop     ; run outside loop 30 times (for 30 rows)
 
-LoadBackground_Grid:
-  LDA $2002             ; read PPU status to reset the high/low latch
-  LDA #$20
-  STA $2006             ; write the high byte of $2000 address
-  LDA #$00
-  STA $2006             ; write the low byte of $2000 address
+;LoadBackground_Grid:
+;  LDA $2002             ; read PPU status to reset the high/low latch
+;  LDA #$20
+;  STA $2006             ; write the high byte of $2000 address
+;  LDA #$00
+;  STA $2006             ; write the low byte of $2000 address;
+;
+;  LDX #$00            ; column counter (0-32)
+;  LDY #$00            ; row counter (0-30)
+;  STX index           ; space between grid points (rows)
+;.BackgroundLoop:
+;  LDX #$00
+;  STY temp              ; using Y for counting space between grid points (columns)
+;  LDY #$00
+;.RowLoop:
+;  LDA index
+;  BNE .RowLoop_NoGrid
+;  CPY #$00
+;  BEQ .RowLoop_Grid
+;  JMP .RowLoop_NoGrid
+;.RowLoop_Grid:
+;  LDY #$01 ; Resets space between grid points (columns)
+;  LDA #$06 ; Grid pixel
+;  JMP .RowLoop_IncX
+;.RowLoop_NoGrid:
+;  LDA #$00 ; No grid pixel
+;.RowLoop_IncX:
+;  STA $2007           ; this runs 32 * 30 times
+;  DEY
+;  INX
+;  CPX #$20
+;  BNE .RowLoop
 
-  LDX #$00            ; column counter (0-32)
-  LDY #$00            ; row counter (0-30)
-  STX index           ; space between grid points (rows)
-.BackgroundLoop:
-  LDX #$00
-  STY temp              ; using Y for counting space between grid points (columns)
-  LDY #$00
-.RowLoop:
-  LDA index
-  BNE .RowLoop_NoGrid
-  CPY #$00
-  BEQ .RowLoop_Grid
-  JMP .RowLoop_NoGrid
-.RowLoop_Grid:
-  LDY #$01 ; Resets space between grid points (columns)
-  LDA #$06 ; Grid pixel
-  JMP .RowLoop_IncX
-.RowLoop_NoGrid:
-  LDA #$00 ; No grid pixel
-.RowLoop_IncX:
-  STA $2007           ; this runs 32 * 30 times
-  DEY
-  INX
-  CPX #$20
-  BNE .RowLoop
+;  LDA index
+;  BNE .RowLoop_IncY
+;  LDA #$01 ; Resets space between grid points (rows)
+;  STA index
+;.RowLoop_IncY:
+;  DEC index
+;  LDY temp
+;  INY
+;  CPY #$1E
+;  BCC .BackgroundLoop
 
-  LDA index
-  BNE .RowLoop_IncY
-  LDA #$01 ; Resets space between grid points (rows)
-  STA index
-.RowLoop_IncY:
-  DEC index
-  LDY temp
-  INY
-  CPY #$1E
-  BCC .BackgroundLoop
-  
+BackgroundComplete:
 
   ;; Configuring the PPU Registers
   ;; Bits 0 - 1 : Background nametable select
