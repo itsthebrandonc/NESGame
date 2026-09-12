@@ -48,11 +48,11 @@ if ($null -ne $lstFile)
                 $mlbFile += "`nNesPrgRom`:$addr`:$label"
             }
         }
-        elseif ($lstLine -match "\.rs .`$") #VARIABLE
+        elseif ($lstLine -match " .rs ") #VARIABLE
         {
             $lstElements = $($lstLine -split '  ').Where({ -not [string]::IsNullOrWhiteSpace($_) })
-            $addr = $lstElements[$lstElements.Count-2].Trim()
-            $label = $lstElements[$lstElements.Count-1].Substring(0, $($lstElements[$lstElements.Count-1]).IndexOf(" .rs "));
+            $addr = $lstElements[1].Trim()
+            $label = $lstElements[2].Substring(0, $($lstElements[2]).IndexOf(" .rs "));
             if ((![string]::IsNullOrWhiteSpace($addr)) -and (![string]::IsNullOrWhiteSpace($label)))
             {
                 #Write-Host "VARIABLE`t$addr`t$label"

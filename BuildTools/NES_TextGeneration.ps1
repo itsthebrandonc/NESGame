@@ -69,6 +69,8 @@ else
     Write-Host "`n`n`n"
     Write-Host "textRow_$($string | ConvertTo-PascalCase):"
     Write-Host "$hexRow ; $string"
+    Add-Content -Path "./BuildTools/output.txt" -Value "`ntextRow_$($string | ConvertTo-PascalCase):"
+    Add-Content -Path "./BuildTools/output.txt" -Value "$hexRow ; $string"
 }
 
 #tileRow_HelloWorld:

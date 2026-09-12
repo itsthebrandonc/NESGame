@@ -77,10 +77,12 @@ while ($gridPointCount % 8 -ne 0)
 
 Clear-Host
 Write-Host $output_backgroundTiles -ForegroundColor Green
+Add-Content -Path "./BuildTools/output.txt" -Value "`n$output_backgroundTiles"
 
 Write-Host "`n"
 Write-Host $output_gridPoints -ForegroundColor Blue
 Write-Host "`n"
+Add-Content -Path "./BuildTools/output.txt" -Value $output_gridPoints
 
 #Grid Points for spacing of 10
 # (00,00) (50,00) (A0,00) (F0,00)

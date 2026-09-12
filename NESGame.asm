@@ -60,11 +60,13 @@ spriteAddr2 .rs 1
 spriteDataPos .rs 1
 spriteData .rs 4 ; Y Pos, Tile Number, Attributes, X Pos
 spriteData2 .rs 4 ; Y Pos, Tile Number, Attributes, X Pos
-playerDirection .rs 1 ; N ($00), NE ($01), NW ($02), S ($03), SE ($04), SW ($05), E ($06), W ($07)
-fireCooldown .rs 1
 
 ;Player variables
-playerRestrictMoveInput .rs 1 ; 0 = Allow movement input, 1 = Do not allow movement input
+;playerRestrictMoveInput.rs 1 ; 0 = Allow movement input, 1 = Do not allow movement input
+playerDirection .rs 1 ; N ($00), NE ($01), NW ($02), S ($03), SE ($04), SW ($05), E ($06), W ($07)
+playerGrid .rs 1 ; Grid number that the player is on
+playerGridMoving .rs 1 ; Tracks if player is currently moving between grid points. 0 = False, 1 = True
+fireCooldown .rs 1
 
 ;Bullet Array (32 Bytes, 16 Bullets * 2 Bytes)
 ;; ;; Bullet Object: 2 Bytes
@@ -103,12 +105,13 @@ enemyArray .rs ENEMYARRAY_SIZE
 OnInit:
   ;Spawn Character
   ; Write top-left sprite info and pass it into SpawnCharacter function
-  LDA #$80
+  LDX #$01
+  LDA gridpoints, X
   STA spriteData
   LDA #$00
   LDX #$02
   STA spriteData, X
-  LDA #$80
+  LDA gridpoints
   INX
   STA spriteData, X
   JSR SpawnCharacter
@@ -146,6 +149,7 @@ OnInit:
 
 OnTick:
   INC frame
+  JSR MoveCharacterOnGrid
   JSR UpdateEnemies
   LDA fireCooldown
   BEQ .OnTick_UpdateBullets
@@ -185,15 +189,15 @@ OnInputA:
   RTS
 .OnInputA_Press:
   ;TOGGLE PLAYER MOVEMENT
-  LDA playerRestrictMoveInput
-  BEQ .OnInputA_SetRestrictMoveInput
-  LDA #$00
-  STA playerRestrictMoveInput
+  ;LDA playerRestrictMoveInput
+  ;BEQ .OnInputA_SetRestrictMoveInput
+  ;LDA #$00
+  ;STA playerRestrictMoveInput
   RTS
-.OnInputA_SetRestrictMoveInput:
-  LDA #$01
-  STA playerRestrictMoveInput
-  RTS
+;.OnInputA_SetRestrictMoveInput:
+;  LDA #$01
+;  STA playerRestrictMoveInput
+;  RTS
   ;DRAWING TEXT
   ;; Setting text variable
   ;LDA #HIGH(textRow_HelloWorld)
@@ -275,39 +279,39 @@ OnInputA:
 ;  RTS
 
 OnInputL:
-  LDA playerRestrictMoveInput
-  BEQ .OnInputL_MoveLeft
-  RTS
-.OnInputL_MoveLeft:
+  ;LDA playerRestrictMoveInput
+  ;BEQ .OnInputL_MoveLeft
+  ;RTS
+;.OnInputL_MoveLeft:
   ;Move character left
-  JSR MoveCharacterLeft
+  JSR SetCharacterGridMove_Left
 .OnInputLComplete:
   RTS
 
 OnInputR:
-  LDA playerRestrictMoveInput
-  BEQ .OnInputR_MoveRight
-  RTS
-.OnInputR_MoveRight:
+  ;LDA playerRestrictMoveInput
+  ;BEQ .OnInputR_MoveRight
+  ;RTS
+;.OnInputR_MoveRight:
   ;Move character right
-  JSR MoveCharacterRight
+  JSR SetCharacterGridMove_Right
   RTS
 
 OnInputU:
-  LDA playerRestrictMoveInput
-  BEQ .OnInputU_MoveUp
-  RTS
-.OnInputU_MoveUp:
+  ;LDA playerRestrictMoveInput
+  ;BEQ .OnInputU_MoveUp
+  ;RTS
+;.OnInputU_MoveUp:
   ;Move character up
-  JSR MoveCharacterUp
+  JSR SetCharacterGridMove_Up
 .OnInputUComplete:
   RTS
 
 OnInputD:
-  LDA playerRestrictMoveInput
-  BEQ .OnInputD_MoveDown
-  RTS
-.OnInputD_MoveDown:
+  ;LDA playerRestrictMoveInput
+  ;BEQ .OnInputD_MoveDown
+  ;RTS
+;.OnInputD_MoveDown:
   ;Move character down
-  JSR MoveCharacterDown
+  JSR SetCharacterGridMove_Down
   RTS

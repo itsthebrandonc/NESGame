@@ -76,9 +76,9 @@ LoadBackground:
   CPX #$04
   BNE .BackgroundLoop      ; run outside loop 4 times
 
-  JMP BackgroundComplete
+  JMP StartupComplete
 
-LoadBackground_2Deep:
+LoadBackground_2Deep:   ; Currently unused
   LDA $2002             ; read PPU status to reset the high/low latch
   LDA #$20
   STA $2006             ; write the high byte of $2000 address
@@ -170,7 +170,7 @@ LoadBackground_2Deep:
 ;  CPY #$1E
 ;  BCC .BackgroundLoop
 
-BackgroundComplete:
+StartupComplete:
 
   ;; Configuring the PPU Registers
   ;; Bits 0 - 1 : Background nametable select
@@ -221,7 +221,7 @@ ReadController1Loop:  ; player input is read one at a time from first bit of $40
   BNE ReadController1Loop ; By end, buttons1 has value of all current button presses in order
   LDX buttons1        ; X = current button inputs
 
-ReadDirection:
+;ReadDirection:
   ; N ($00)
   ; NE ($01)
   ; NW ($02)
@@ -231,29 +231,29 @@ ReadDirection:
   ; E ($06)
   ; W ($07)
   
-  TXA
-  AND #%00001111 ; Get only directional inputs
-  BEQ ReadA       ; No direction, keep previous value
-  LDX #$00
-  TAY
-  AND #%00001000 ; North (N, NE, NW)
-  BNE .ReadDirection_EW
-  LDX #$03
-  TYA
-  AND #%00000100 ; South (S, SE, SW)
-  BNE .ReadDirection_EW
-  LDX #$05
-.ReadDirection_EW
-  TYA
-  AND #%00000011 ; Get only L/R inputs
-  BEQ .ReadDirection_Done
-  INX
-  TYA
-  AND #%00000010 ; East (E, NE, SE)
-  BEQ .ReadDirection_Done
-  INX
-.ReadDirection_Done
-  STX playerDirection
+;  TXA
+;  AND #%00001111 ; Get only directional inputs
+;  BEQ ReadA       ; No direction, keep previous value
+;  LDX #$00
+;  TAY
+;  AND #%00001000 ; North (N, NE, NW)
+;  BNE .ReadDirection_EW
+;  LDX #$03
+;  TYA
+;  AND #%00000100 ; South (S, SE, SW)
+;  BNE .ReadDirection_EW
+;  LDX #$05
+;.ReadDirection_EW
+;  TYA
+;  AND #%00000011 ; Get only L/R inputs
+;  BEQ .ReadDirection_Done
+;  INX
+;  TYA
+;  AND #%00000010 ; East (E, NE, SE)
+;  BEQ .ReadDirection_Done
+;  INX
+;.ReadDirection_Done
+;  STX playerDirection
 
 
 ReadA:
